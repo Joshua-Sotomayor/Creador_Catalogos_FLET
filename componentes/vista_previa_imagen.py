@@ -88,7 +88,8 @@ class VistaPreviaImagen(ft.Column):
             self._control_imagen.src_base64 = datos_base64
             self._contenedor_imagen.content = self._control_imagen
 
-        self._contenedor_imagen.update()
+        if self.page:
+            self._contenedor_imagen.update()
 
     def obtener_imagen_actual(self) -> Optional[Image.Image]:
         """Retorna la imagen actual."""

@@ -77,13 +77,21 @@ class VistaEdicion(ft.UserControl):
         self._imagenes_compuestas: Dict[int, Image.Image] = {}
 
         self.expand = True
-        self.scroll = ft.ScrollMode.AUTO
-        self.spacing = 0
-        self.controls = [self._construir_contenido()]
 
-        # Inicializar con el primer producto
+        self._contenido = self._construir_contenido()
+
+    def did_mount(self):
+        # Inicializar una vez que ya formamos parte de la pantalla gráfica
         if self.productos:
             self._cargar_producto_actual()
+
+    def build(self):
+        return ft.Column(
+            controls=[self._contenido],
+            scroll=ft.ScrollMode.AUTO,
+            spacing=0,
+            expand=True
+        )
 
     def _construir_contenido(self) -> ft.Container:
         """Construye el layout principal de la vista."""

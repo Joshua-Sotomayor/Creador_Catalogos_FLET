@@ -135,7 +135,8 @@ class MatrizPosicion(ft.Column):
 
         self._etiqueta_posicion.value = self._texto_posicion()
 
-        self.update()
+        if self.page:
+            self.update()
 
         if self.al_seleccionar:
             self.al_seleccionar((fila, columna))
@@ -152,7 +153,8 @@ class MatrizPosicion(ft.Column):
         else:
             celda.bgcolor = COLOR_CELDA_NORMAL
             celda.border = ft.border.all(1, COLOR_BORDE)
-        celda.update()
+        if self.page:
+            celda.update()
 
     def obtener_posicion(self) -> Optional[Tuple[int, int]]:
         """Retorna la posición seleccionada actualmente."""

@@ -125,7 +125,8 @@ class GaleriaImagenes(ft.Column):
             self._grilla.controls.append(contenedor)
 
         self._etiqueta_conteo.value = f"{len(self.rutas_imagenes)} imagen(es)"
-        self.update()
+        if self.page:
+            self.update()
 
     def _al_seleccionar_imagen(self, ruta: str):
         """Maneja la selección de una imagen."""
@@ -138,7 +139,8 @@ class GaleriaImagenes(ft.Column):
         if ruta in self._contenedores:
             self._contenedores[ruta].border = ft.border.all(2, COLOR_ACENTO_PRIMARIO)
 
-        self.update()
+        if self.page:
+            self.update()
 
         if self.al_seleccionar:
             self.al_seleccionar(ruta)

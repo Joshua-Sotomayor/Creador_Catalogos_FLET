@@ -57,10 +57,18 @@ class VistaPrevisualizacion(ft.UserControl):
         self._tarjetas: Dict[int, ft.Container] = {}
 
         self.expand = True
-        self.scroll = ft.ScrollMode.AUTO
-        self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-        self.spacing = 0
-        self.controls = [self._construir_contenido()]
+
+        # Generar todas las imágenes finales
+        self._generar_todas_las_previews()
+
+    def build(self):
+        return ft.Column(
+            controls=[self._construir_contenido()],
+            scroll=ft.ScrollMode.AUTO,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=0,
+            expand=True
+        )
 
         # Generar todas las imágenes finales
         self._generar_todas_las_previews()
