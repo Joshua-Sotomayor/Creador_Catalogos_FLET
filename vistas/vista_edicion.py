@@ -43,7 +43,7 @@ from servicios.servicio_deteccion_color import ServicioDeteccionColor
 from utilidades.ayudantes_imagen import cargar_imagen
 
 
-class VistaEdicion(ft.Column):
+class VistaEdicion(ft.UserControl):
     """
     Vista de edición de precio y nombre para cada producto.
     Muestra las imágenes secuencialmente y permite configurar:

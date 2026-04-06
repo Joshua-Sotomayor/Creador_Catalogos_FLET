@@ -1,5 +1,6 @@
 """
 Componente de selección de carpetas y archivos reutilizable.
+Responsive: se adapta al ancho disponible.
 """
 import flet as ft
 from typing import Callable, Optional, List
@@ -10,12 +11,14 @@ from configuracion.constantes import (
     COLOR_TEXTO_PRINCIPAL,
     COLOR_TEXTO_SECUNDARIO,
     COLOR_BORDE,
+    COLOR_EXITO,
     RADIO_BORDE,
 )
 
 
-class SelectorCarpeta(ft.Column):
-    """Componente reutilizable para seleccionar carpetas o archivos."""
+class SelectorCarpeta(ft.UserControl):
+    """Componente reutilizable para seleccionar carpetas o archivos.
+    Se adapta al ancho del contenedor padre."""
 
     def __init__(
         self,
@@ -39,68 +42,81 @@ class SelectorCarpeta(ft.Column):
         self.rutas_seleccionadas = []
 
         self._etiqueta_ruta = ft.Text(
-            "Sin seleccionar",
+            "Sin seleccionar — haz click para elegir",
             size=12,
             color=COLOR_TEXTO_SECUNDARIO,
-            max_lines=1,
-            overflow=ft.TextOverflow.ELLIPSIS,
-            width=300,
         )
 
         self._indicador_estado = ft.Icon(
             ft.Icons.RADIO_BUTTON_UNCHECKED,
             color=COLOR_TEXTO_SECUNDARIO,
-            size=16,
+            size=18,
         )
 
         self._selector = ft.FilePicker(on_result=self._al_resultado)
-        self.pagina.overlay.append(self._selector)
 
-        self.spacing = 0
-        self.controls = [self._construir_tarjeta()]
+    def did_mount(self):
+        if self._selector not in self.pagina.overlay:
+            self.pagina.overlay.append(self._selector)
+            self.pagina.update()
+
+    def will_unmount(self):
+        if self._selector in self.pagina.overlay:
+            self.pagina.overlay.remove(self._selector)
+            self.pagina.update()
+
+    def build(self):
+        self.tarjeta = self._construir_tarjeta()
+        return self.tarjeta
 
     def _construir_tarjeta(self) -> ft.Container:
-        """Construye la tarjeta visual del selector."""
+        """Construye la tarjeta visual del selector — 100% ancho."""
+
+        info_columna = ft.Column(
+            controls=[
+                ft.Text(
+                    self.etiqueta,
+                    size=14,
+                    weight=ft.FontWeight.W_600,
+                    color=COLOR_TEXTO_PRINCIPAL,
+                ),
+            ] + ([
+                ft.Text(
+                    self.descripcion,
+                    size=11,
+                    color=COLOR_TEXTO_SECUNDARIO,
+                )
+            ] if self.descripcion else []) + [
+                self._etiqueta_ruta,
+            ],
+            spacing=3,
+        )
+
         contenido_fila = ft.Row(
             controls=[
                 ft.Container(
-                    content=ft.Icon(self.icono, color=COLOR_ACENTO_PRIMARIO, size=28),
-                    padding=ft.padding.all(8),
+                    content=ft.Icon(self.icono, color=COLOR_ACENTO_PRIMARIO, size=24),
+                    width=44,
+                    height=44,
+                    border_radius=10,
+                    bgcolor="#2a101f", # Color oscuro estático en lugar de opacidad mal calculada
+                    alignment=ft.alignment.center,
                 ),
-                ft.Column(
-                    controls=[
-                        ft.Text(
-                            self.etiqueta,
-                            size=14,
-                            weight=ft.FontWeight.W_600,
-                            color=COLOR_TEXTO_PRINCIPAL,
-                        ),
-                        ft.Text(
-                            self.descripcion,
-                            size=11,
-                            color=COLOR_TEXTO_SECUNDARIO,
-                            max_lines=2,
-                        ) if self.descripcion else ft.Container(),
-                        self._etiqueta_ruta,
-                    ],
-                    spacing=2,
-                    expand=True,
-                ),
+                ft.Container(content=info_columna, expand=True),
                 self._indicador_estado,
             ],
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            spacing=14,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
         return ft.Container(
             content=contenido_fila,
-            padding=ft.padding.symmetric(horizontal=16, vertical=12),
+            padding=ft.padding.symmetric(horizontal=16, vertical=14),
             border_radius=RADIO_BORDE,
             border=ft.border.all(1, COLOR_BORDE),
             bgcolor=COLOR_FONDO_TARJETA,
             on_click=self._al_clickear,
             ink=True,
-            animate=ft.animation.Animation(200, ft.AnimationCurve.EASE_IN_OUT),
             on_hover=self._al_hover,
         )
 
@@ -108,9 +124,11 @@ class SelectorCarpeta(ft.Column):
         """Maneja el evento hover sobre la tarjeta."""
         contenedor = e.control
         if e.data == "true":
-            contenedor.border = ft.border.all(1, COLOR_ACENTO_PRIMARIO)
+            contenedor.border = ft.border.all(1.5, COLOR_ACENTO_PRIMARIO)
+            contenedor.bgcolor = "#1a1a3a"
         else:
             contenedor.border = ft.border.all(1, COLOR_BORDE)
+            contenedor.bgcolor = COLOR_FONDO_TARJETA
         contenedor.update()
 
     def _al_clickear(self, e):
@@ -147,24 +165,24 @@ class SelectorCarpeta(ft.Column):
         elif self.tipo == "archivos_multiples":
             if e.files:
                 self.rutas_seleccionadas = [f.path for f in e.files]
-                texto = f"{len(e.files)} archivo(s) seleccionado(s)"
+                texto = f"✅ {len(e.files)} archivo(s) seleccionado(s)"
                 self._actualizar_ui_seleccion(texto)
                 if self.al_seleccionar:
                     self.al_seleccionar(self.rutas_seleccionadas)
 
     def _actualizar_ui_seleccion(self, texto_ruta: str):
         """Actualiza la UI para reflejar la selección."""
-        self._etiqueta_ruta.value = texto_ruta
-        self._etiqueta_ruta.color = COLOR_TEXTO_PRINCIPAL
+        self._etiqueta_ruta.value = f"📂 {texto_ruta}"
+        self._etiqueta_ruta.color = COLOR_EXITO
         self._indicador_estado.name = ft.Icons.CHECK_CIRCLE
-        self._indicador_estado.color = "#4caf50"
+        self._indicador_estado.color = COLOR_EXITO
         self.update()
 
     def reiniciar(self):
         """Reinicia el selector a su estado inicial."""
         self.ruta_seleccionada = None
         self.rutas_seleccionadas = []
-        self._etiqueta_ruta.value = "Sin seleccionar"
+        self._etiqueta_ruta.value = "Sin seleccionar — haz click para elegir"
         self._etiqueta_ruta.color = COLOR_TEXTO_SECUNDARIO
         self._indicador_estado.name = ft.Icons.RADIO_BUTTON_UNCHECKED
         self._indicador_estado.color = COLOR_TEXTO_SECUNDARIO

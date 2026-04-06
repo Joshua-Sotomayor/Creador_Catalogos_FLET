@@ -31,7 +31,7 @@ from utilidades.ayudantes_imagen import (
 )
 
 
-class VistaPrevisualizacion(ft.Column):
+class VistaPrevisualizacion(ft.UserControl):
     """
     Vista de previsualización final.
     Muestra las imágenes resultantes para que el usuario las apruebe o edite

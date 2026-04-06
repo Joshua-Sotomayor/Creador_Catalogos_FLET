@@ -1,6 +1,7 @@
 """
 Vista de configuración inicial (Paso 1).
 El usuario selecciona carpetas, archivos de precios y opciones generales.
+Diseño responsive que se adapta al tamaño de la ventana.
 """
 import flet as ft
 from typing import Callable, Optional
@@ -22,15 +23,10 @@ from configuracion.constantes import (
 from componentes.selector_carpeta import SelectorCarpeta
 
 
-class VistaConfiguracion(ft.Column):
+class VistaConfiguracion(ft.UserControl):
     """
     Pantalla de configuración inicial del catálogo.
-    Permite al usuario seleccionar:
-    - Carpeta madre de productos
-    - Carpeta de fondos por categoría
-    - Opción de incluir nombre del producto
-    - Carpeta/imagen de fondo para precios
-    - Archivo de precios (txt/csv)
+    Responsive: se adapta al ancho de la ventana.
     """
 
     def __init__(
@@ -51,34 +47,56 @@ class VistaConfiguracion(ft.Column):
         self._rutas_imagenes_fondo_precio_manual = []
         self._ruta_imagen_individual = None
         self._incluir_nombre = True
-        self._modo_entrada = "carpeta"  # "carpeta" o "individual"
-
-        # Construir UI
-        self.scroll = ft.ScrollMode.AUTO
+        self._modo_entrada = "carpeta"
         self.expand = True
-        self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-        self.spacing = 0
-        self.controls = [self._construir_contenido()]
+
+
+    def build(self):
+        self._contenido_principal = self._construir_contenido()
+        
+        # Escuchar cambios de tamaño para responsive (opcional en Flet 0.25)
+        self.pagina.on_resized = self._al_redimensionar
+        
+        return ft.Column(
+            controls=[self._contenido_principal],
+            scroll=ft.ScrollMode.AUTO,
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=0,
+        )
+
+    def _al_redimensionar(self, e):
+        """Recalcula el layout cuando cambia el tamaño de la ventana."""
+        try:
+            self._contenido_principal.update()
+        except Exception:
+            pass
 
     def _construir_contenido(self) -> ft.Container:
-        """Construye todo el contenido de la vista."""
+        """Construye todo el contenido de la vista — responsive."""
 
-        # === Encabezado ===
+        # === Encabezado con gradiente visual ===
         encabezado = ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Row(
-                        controls=[
-                            ft.Icon(ft.Icons.AUTO_AWESOME, color=COLOR_ACENTO_PRIMARIO, size=32),
-                            ft.Text(
-                                "CatalogoCreator",
-                                size=28,
-                                weight=ft.FontWeight.W_800,
-                                color=COLOR_TEXTO_PRINCIPAL,
-                            ),
-                        ],
-                        alignment=ft.MainAxisAlignment.CENTER,
-                        spacing=12,
+                    ft.Container(
+                        content=ft.Icon(
+                            ft.Icons.AUTO_AWESOME,
+                            color=COLOR_ACENTO_PRIMARIO,
+                            size=40,
+                        ),
+                        width=70,
+                        height=70,
+                        border_radius=35,
+                        bgcolor=COLOR_FONDO_TARJETA,
+                        alignment=ft.alignment.center,
+                        border=ft.border.all(2, COLOR_ACENTO_PRIMARIO),
+                    ),
+                    ft.Text(
+                        "CatalogoCreator",
+                        size=30,
+                        weight=ft.FontWeight.W_900,
+                        color=COLOR_TEXTO_PRINCIPAL,
                     ),
                     ft.Text(
                         "Crea catálogos de productos profesionales en minutos",
@@ -90,7 +108,7 @@ class VistaConfiguracion(ft.Column):
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=8,
             ),
-            padding=ft.padding.symmetric(vertical=30),
+            padding=ft.padding.only(top=30, bottom=20),
         )
 
         # === Selector de modo de entrada ===
@@ -99,12 +117,12 @@ class VistaConfiguracion(ft.Column):
             segments=[
                 ft.Segment(
                     value="carpeta",
-                    label=ft.Text("Carpeta de productos"),
+                    label=ft.Text("Carpeta de productos", size=13),
                     icon=ft.Icon(ft.Icons.FOLDER),
                 ),
                 ft.Segment(
                     value="individual",
-                    label=ft.Text("Imagen individual"),
+                    label=ft.Text("Imagen individual", size=13),
                     icon=ft.Icon(ft.Icons.IMAGE),
                 ),
             ],
@@ -117,7 +135,7 @@ class VistaConfiguracion(ft.Column):
         )
 
         seccion_modo = self._crear_seccion(
-            "Modo de entrada",
+            ft.Icons.INPUT, "Modo de entrada",
             "Selecciona si quieres procesar una carpeta completa o una imagen individual",
             [self._segmento_modo],
         )
@@ -153,13 +171,14 @@ class VistaConfiguracion(ft.Column):
         )
 
         seccion_obligatoria = self._crear_seccion(
-            "📁 Archivos principales",
+            ft.Icons.FOLDER_OPEN, "Archivos principales",
             "Estas carpetas son necesarias para crear el catálogo",
             [
                 self._selector_carpeta_madre,
                 self._selector_imagen_individual,
                 self._selector_fondos,
             ],
+            obligatoria=True,
         )
 
         # === Sección: Nombre del producto ===
@@ -172,7 +191,7 @@ class VistaConfiguracion(ft.Column):
         )
 
         seccion_nombre = self._crear_seccion(
-            "✏️ Nombre del producto",
+            ft.Icons.EDIT, "Nombre del producto",
             "El nombre se toma del nombre del archivo de imagen (sin extensión)",
             [self._switch_nombre],
         )
@@ -190,7 +209,7 @@ class VistaConfiguracion(ft.Column):
         self._selector_fondo_precio_unico = SelectorCarpeta(
             pagina=self.pagina,
             etiqueta="O imagen única de fondo para todos los precios",
-            descripcion="Una sola imagen que se usará para encerrar el precio de todos los productos.",
+            descripcion="Una sola imagen que se usará para encerrar el precio en todos los productos.",
             tipo="archivo",
             extensiones_permitidas=["png", "jpg", "jpeg", "webp"],
             al_seleccionar=self._al_seleccionar_fondo_precio_unico,
@@ -207,16 +226,40 @@ class VistaConfiguracion(ft.Column):
             icono=ft.Icons.COLLECTIONS,
         )
 
+        # Separadores estilizados
+        separador = ft.Container(
+            content=ft.Row(
+                controls=[
+                    ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                    ft.Text("o", size=11, color=COLOR_TEXTO_SECUNDARIO),
+                    ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                ],
+                spacing=10,
+            ),
+            padding=ft.padding.symmetric(vertical=4),
+        )
+
         seccion_fondo_precio = self._crear_seccion(
-            "🏷️ Fondo decorativo para precio (opcional)",
+            ft.Icons.SELL, "Fondo decorativo para precio",
             "Imagen decorativa que encierra el precio. Puedes elegir una de las tres opciones.",
             [
                 self._selector_fondos_precio,
-                ft.Divider(height=1, color=COLOR_BORDE),
+                separador,
                 self._selector_fondo_precio_unico,
-                ft.Divider(height=1, color=COLOR_BORDE),
+                ft.Container(  # Clone separator
+                    content=ft.Row(
+                        controls=[
+                            ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                            ft.Text("o", size=11, color=COLOR_TEXTO_SECUNDARIO),
+                            ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                        ],
+                        spacing=10,
+                    ),
+                    padding=ft.padding.symmetric(vertical=4),
+                ),
                 self._selector_imagenes_precio_manual,
             ],
+            opcional=True,
         )
 
         # === Sección: Archivo de precios ===
@@ -231,15 +274,16 @@ class VistaConfiguracion(ft.Column):
         )
 
         seccion_precios = self._crear_seccion(
-            "💰 Archivo de precios (opcional)",
-            "Si no cargas un archivo, podrás ingresar precios manualmente",
+            ft.Icons.MONETIZATION_ON, "Archivo de precios",
+            "Si no cargas un archivo, podrás ingresar precios manualmente en la edición",
             [self._selector_precios],
+            opcional=True,
         )
 
         # === Botón iniciar ===
         self._mensaje_estado = ft.Text(
             "",
-            size=12,
+            size=13,
             color=COLOR_ERROR,
             text_align=ft.TextAlign.CENTER,
         )
@@ -250,59 +294,107 @@ class VistaConfiguracion(ft.Column):
                 style=ft.ButtonStyle(
                     bgcolor=COLOR_ACENTO_PRIMARIO,
                     color=COLOR_TEXTO_PRINCIPAL,
-                    padding=ft.padding.symmetric(horizontal=40, vertical=16),
+                    padding=ft.padding.symmetric(horizontal=50, vertical=18),
                     shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE),
                     text_style=ft.TextStyle(size=16, weight=ft.FontWeight.W_700),
-                    elevation=4,
+                    elevation=6,
                     animation_duration=200,
                 ),
                 on_click=self._al_iniciar,
             ),
-            padding=ft.padding.symmetric(vertical=20),
+            padding=ft.padding.only(top=10, bottom=30),
             alignment=ft.alignment.center,
         )
 
-        # === Contenedor principal ===
-        return ft.Container(
-            content=ft.Column(
-                controls=[
-                    encabezado,
-                    seccion_modo,
-                    seccion_obligatoria,
-                    seccion_nombre,
-                    seccion_fondo_precio,
-                    seccion_precios,
-                    self._mensaje_estado,
-                    boton_iniciar,
-                ],
-                spacing=ESPACIADO_GENERAL,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            ),
-            padding=ft.padding.symmetric(horizontal=40, vertical=20),
-            expand=True,
-            width=700,
-            alignment=ft.alignment.top_center,
+        # === Contenedor principal — RESPONSIVE ===
+        columna_contenido = ft.Column(
+            controls=[
+                encabezado,
+                seccion_modo,
+                seccion_obligatoria,
+                seccion_nombre,
+                seccion_fondo_precio,
+                seccion_precios,
+                self._mensaje_estado,
+                boton_iniciar,
+            ],
+            spacing=16,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            # No expand=True aquí porque su padre es un Column scrollable infinito
         )
 
-    def _crear_seccion(self, titulo: str, descripcion: str, controles: list) -> ft.Container:
-        """Crea una sección visual con título, descripción y controles."""
+        # Usamos un Row centrado para que se vea bien en pantallas anchas pero se pueda hacer pequeña
+        return ft.Row(
+            controls=[
+                ft.Container(
+                    content=columna_contenido,
+                    padding=ft.padding.symmetric(horizontal=30, vertical=10),
+                    width=800,  # Fija un ancho agradable
+                )
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+    def _crear_seccion(
+        self,
+        icono: str,
+        titulo: str,
+        descripcion: str,
+        controles: list,
+        obligatoria: bool = False,
+        opcional: bool = False,
+    ) -> ft.Container:
+        """Crea una sección visual estilizada con ícono, título y controles."""
+
+        # Badge de obligatorio/opcional
+        badge = None
+        if obligatoria:
+            badge = ft.Container(
+                content=ft.Text("Requerido", size=10, color=COLOR_TEXTO_PRINCIPAL,
+                                weight=ft.FontWeight.W_600),
+                bgcolor=COLOR_ACENTO_PRIMARIO,
+                border_radius=4,
+                padding=ft.padding.symmetric(horizontal=8, vertical=2),
+            )
+        elif opcional:
+            badge = ft.Container(
+                content=ft.Text("Opcional", size=10, color=COLOR_TEXTO_SECUNDARIO,
+                                weight=ft.FontWeight.W_500),
+                bgcolor=COLOR_FONDO_TARJETA,
+                border_radius=4,
+                padding=ft.padding.symmetric(horizontal=8, vertical=2),
+                border=ft.border.all(1, COLOR_BORDE),
+            )
+
+        titulo_row = ft.Row(
+            controls=[
+                ft.Icon(icono, color=COLOR_ACENTO_PRIMARIO, size=20),
+                ft.Text(
+                    titulo,
+                    size=16,
+                    weight=ft.FontWeight.W_700,
+                    color=COLOR_TEXTO_PRINCIPAL,
+                    expand=True,
+                ),
+            ] + ([badge] if badge else []),
+            alignment=ft.MainAxisAlignment.START,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10,
+        )
+
         return ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Text(
-                        titulo,
-                        size=16,
-                        weight=ft.FontWeight.W_700,
-                        color=COLOR_TEXTO_PRINCIPAL,
-                    ),
+                    titulo_row,
                     ft.Text(
                         descripcion,
                         size=12,
                         color=COLOR_TEXTO_SECUNDARIO,
                     ),
-                    ft.Column(controls=controles, spacing=8),
+                    ft.Container(height=6),
+                    ft.Column(controls=controles, spacing=10),
                 ],
-                spacing=10,
+                spacing=6,
             ),
             padding=ft.padding.all(20),
             border_radius=RADIO_BORDE,
@@ -347,7 +439,6 @@ class VistaConfiguracion(ft.Column):
 
     def _al_iniciar(self, e):
         """Valida y lanza el proceso."""
-        # Cláusulas de guarda
         if self._modo_entrada == "carpeta" and not self._ruta_carpeta_madre:
             self._mostrar_error("Selecciona la carpeta madre de productos.")
             return
