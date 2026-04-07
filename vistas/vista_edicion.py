@@ -62,6 +62,7 @@ class VistaEdicion(ft.UserControl):
         incluir_nombre: bool = True,
         imagenes_fondo_precio: List[str] = None,
         al_finalizar: Optional[Callable[[List[Producto]], None]] = None,
+        indice_inicial: int = 0,
     ):
         super().__init__()
         self.pagina = pagina
@@ -71,7 +72,7 @@ class VistaEdicion(ft.UserControl):
         self.imagenes_fondo_precio = imagenes_fondo_precio or []
         self.al_finalizar = al_finalizar
 
-        self._indice_actual = 0
+        self._indice_actual = indice_inicial
         self._servicio_texto = ServicioTexto()
         self._servicio_color = ServicioDeteccionColor()
         self._imagenes_compuestas: Dict[int, Image.Image] = {}
@@ -208,6 +209,12 @@ class VistaEdicion(ft.UserControl):
             al_cambiar=self._al_cambiar_color_precio,
         )
 
+        self._slider_tamano_precio = ft.Slider(
+            min=10, max=150, value=30, divisions=140, label="Tamaño: {value}",
+            active_color=COLOR_ACENTO_PRIMARIO,
+            on_change=self._al_cambiar_tamano_precio,
+        )
+
         seccion_precio = ft.Container(
             content=ft.Column(
                 controls=[
@@ -215,6 +222,8 @@ class VistaEdicion(ft.UserControl):
                             color=COLOR_TEXTO_PRINCIPAL),
                     self._campo_precio,
                     self._matriz_precio,
+                    ft.Text("Tamaño del texto", size=13, color=COLOR_TEXTO_SECUNDARIO),
+                    self._slider_tamano_precio,
                     self._selector_color_precio,
                 ],
                 spacing=12,
@@ -281,6 +290,12 @@ class VistaEdicion(ft.UserControl):
             al_cambiar=self._al_cambiar_color_nombre,
         )
 
+        self._slider_tamano_nombre = ft.Slider(
+            min=8, max=120, value=20, divisions=112, label="Tamaño: {value}",
+            active_color=COLOR_ACENTO_PRIMARIO,
+            on_change=self._al_cambiar_tamano_nombre,
+        )
+
         self._contenedor_nombre = ft.Container(
             content=ft.Column(
                 controls=[
@@ -295,6 +310,8 @@ class VistaEdicion(ft.UserControl):
                     self._campo_nombre,
                     self._matriz_nombre,
                     self._dropdown_alineacion,
+                    ft.Text("Tamaño del texto", size=13, color=COLOR_TEXTO_SECUNDARIO),
+                    self._slider_tamano_nombre,
                     self._selector_color_nombre,
                 ],
                 spacing=12,
@@ -326,7 +343,7 @@ class VistaEdicion(ft.UserControl):
             border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO,
             border=ft.border.all(1, COLOR_BORDE),
-            visible=bool(self.imagenes_fondo_precio),
+            visible=False,
         )
 
         # -- Selector de fuente --
@@ -351,9 +368,7 @@ class VistaEdicion(ft.UserControl):
                 seccion_fuente,
             ],
             spacing=12,
-            scroll=ft.ScrollMode.AUTO,
             width=380,
-            expand=True,
         )
 
         # === Botones de acción ===
@@ -414,7 +429,6 @@ class VistaEdicion(ft.UserControl):
             spacing=20,
             alignment=ft.MainAxisAlignment.CENTER,
             vertical_alignment=ft.CrossAxisAlignment.START,
-            expand=True,
         )
 
         return ft.Container(
@@ -428,7 +442,6 @@ class VistaEdicion(ft.UserControl):
                     ft.Container(
                         content=area_principal,
                         padding=ft.padding.symmetric(horizontal=20),
-                        expand=True,
                     ),
                     self._mensaje_estado,
                     botones_accion,
@@ -436,10 +449,8 @@ class VistaEdicion(ft.UserControl):
                 ],
                 spacing=12,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                expand=True,
             ),
             padding=ft.padding.all(10),
-            expand=True,
         )
 
     # === Carga de producto ===
@@ -478,6 +489,19 @@ class VistaEdicion(ft.UserControl):
                 self._imagenes_compuestas[self._indice_actual] = imagen_compuesta
         else:
             imagen_compuesta = None
+
+        if producto.tamano_precio:
+            self._slider_tamano_precio.value = producto.tamano_precio
+        else:
+            self._slider_tamano_precio.value = 30  # Default referencial
+
+        if producto.tamano_nombre:
+            self._slider_tamano_nombre.value = producto.tamano_nombre
+        else:
+            self._slider_tamano_nombre.value = 20  # Default referencial
+
+        if producto.fuente:
+            self._selector_fuente._dropdown.value = producto.fuente
 
         if imagen_compuesta:
             self._vista_previa.actualizar_imagen(imagen_compuesta)
@@ -564,11 +588,21 @@ class VistaEdicion(ft.UserControl):
             self.productos[self._indice_actual].ruta_fondo_precio = ruta
             self._generar_preview()
 
+    def _al_cambiar_tamano_precio(self, e):
+        if self._indice_actual < len(self.productos):
+            self.productos[self._indice_actual].tamano_precio = int(e.control.value)
+            self._generar_preview()
+
+    def _al_cambiar_tamano_nombre(self, e):
+        if self._indice_actual < len(self.productos):
+            self.productos[self._indice_actual].tamano_nombre = int(e.control.value)
+            self._generar_preview()
+
     def _al_cambiar_fuente(self, fuente: str):
-        """Recarga la fuente en el servicio de texto (se reflejará en la siguiente preview)."""
-        self._servicio_texto._fuente_cache.clear()
-        # TODO: Implementar carga de fuente personalizada en el servicio
-        self._generar_preview()
+        """Asigna la ruta de la fuente al producto actual."""
+        if self._indice_actual < len(self.productos):
+            self.productos[self._indice_actual].fuente = fuente
+            self._generar_preview()
 
     # === Generación de preview ===
 
@@ -602,6 +636,9 @@ class VistaEdicion(ft.UserControl):
             alineacion_nombre=producto.alineacion_nombre or ALINEACION_CENTRO,
             color_nombre=producto.color_texto_nombre or (255, 255, 255),
             imagen_fondo_precio=imagen_fondo_precio,
+            ruta_fuente=producto.fuente or self._selector_fuente.obtener_fuente(),
+            tamano_precio=producto.tamano_precio,
+            tamano_nombre=producto.tamano_nombre,
         )
 
         self._vista_previa.actualizar_imagen(preview)
@@ -652,24 +689,11 @@ class VistaEdicion(ft.UserControl):
         producto.alineacion_nombre = self._dropdown_alineacion.value
 
     def _al_finalizar_edicion(self, e):
-        """Verifica que todos los productos tengan precio y finaliza."""
+        """Finaliza la edición y pasa a la vista de previsualización."""
         self._guardar_producto_actual()
 
-        productos_sin_precio = [
-            p for p in self.productos
-            if not p.precio or not p.posicion_precio
-        ]
-
-        if productos_sin_precio:
-            nombres = ", ".join(p.obtener_nombre_limpio() for p in productos_sin_precio[:3])
-            restantes = len(productos_sin_precio) - 3
-            texto = f"⚠️ Faltan datos en: {nombres}"
-            if restantes > 0:
-                texto += f" y {restantes} más"
-            self._mensaje_estado.value = texto
-            self._mensaje_estado.color = COLOR_ADVERTENCIA
-            self._mensaje_estado.update()
-            return
+        if self.al_finalizar:
+            self.al_finalizar(self.productos)
 
         if self.al_finalizar:
             self.al_finalizar(self.productos)

@@ -58,7 +58,8 @@ class VistaPrevisualizacion(ft.UserControl):
 
         self.expand = True
 
-        # Generar todas las imágenes finales
+    def did_mount(self):
+        """Generar las imágenes de previsualización al montarse en la página."""
         self._generar_todas_las_previews()
 
     def build(self):
@@ -69,9 +70,6 @@ class VistaPrevisualizacion(ft.UserControl):
             spacing=0,
             expand=True
         )
-
-        # Generar todas las imágenes finales
-        self._generar_todas_las_previews()
 
     def _construir_contenido(self) -> ft.Container:
         """Construye el contenido completo de la vista."""
@@ -127,7 +125,7 @@ class VistaPrevisualizacion(ft.UserControl):
 
         # Grilla de imágenes
         self._grilla_productos = ft.GridView(
-            expand=False,
+            expand=True,
             max_extent=320,
             child_aspect_ratio=0.75,
             spacing=16,

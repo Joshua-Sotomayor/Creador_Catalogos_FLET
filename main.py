@@ -281,6 +281,29 @@ class AplicacionCatalogo:
                 if ruta_guardada:
                     producto.ruta_sin_fondo = ruta_guardada
 
+            # --- Paso 3.5: Remover fondos de imágenes de fondo de precio ---
+            imagenes_precio_procesadas = []
+            if self._imagenes_fondo_precio:
+                self._actualizar_progreso("🏷️ Procesando fondos de precio...", "", 0.60)
+                for ruta_fondo in self._imagenes_fondo_precio:
+                    try:
+                        img_test = Image.open(ruta_fondo)
+                        if img_test.mode != "RGBA" or not img_test.getextrema()[3][0] < 255:
+                            ruta_sin_fondo = ruta_fondo.replace(".", "_sin_fondo.", 1)
+                            resultado = self.servicio_remover_fondo.remover_fondo_y_guardar(
+                                ruta_fondo, ruta_sin_fondo
+                            )
+                            if resultado:
+                                imagenes_precio_procesadas.append(resultado)
+                            else:
+                                imagenes_precio_procesadas.append(ruta_fondo)
+                        else:
+                            imagenes_precio_procesadas.append(ruta_fondo)
+                    except Exception:
+                        imagenes_precio_procesadas.append(ruta_fondo)
+
+                self._imagenes_fondo_precio = imagenes_precio_procesadas
+
             # --- Paso 4: Componer sobre fondos ---
             self._actualizar_progreso("🎨 Componiendo imágenes...", "", 0.65)
 
@@ -347,30 +370,7 @@ class AplicacionCatalogo:
                 # Configurar inclusión de nombre
                 producto.incluir_nombre = self.configuracion.incluir_nombre
 
-            # --- Paso 5: Remover fondos de imágenes de fondo de precio ---
-            self._actualizar_progreso("🏷️ Procesando fondos de precio...", "", 0.92)
 
-            imagenes_precio_procesadas = []
-            for ruta_fondo in self._imagenes_fondo_precio:
-                # Intentar remover fondo si no es PNG con transparencia
-                try:
-                    img_test = Image.open(ruta_fondo)
-                    if img_test.mode != "RGBA" or not img_test.getextrema()[3][0] < 255:
-                        ruta_sin_fondo = ruta_fondo.replace(".", "_sin_fondo.", 1)
-                        resultado = self.servicio_remover_fondo.remover_fondo_y_guardar(
-                            ruta_fondo, ruta_sin_fondo
-                        )
-                        if resultado:
-                            imagenes_precio_procesadas.append(resultado)
-                        else:
-                            imagenes_precio_procesadas.append(ruta_fondo)
-                    else:
-                        imagenes_precio_procesadas.append(ruta_fondo)
-                except Exception:
-                    imagenes_precio_procesadas.append(ruta_fondo)
-
-            if imagenes_precio_procesadas:
-                self._imagenes_fondo_precio = imagenes_precio_procesadas
 
             self._actualizar_progreso("✅ Procesamiento completado", "", 1.0)
 
@@ -403,14 +403,12 @@ class AplicacionCatalogo:
             incluir_nombre=self.configuracion.incluir_nombre,
             imagenes_fondo_precio=self._imagenes_fondo_precio,
             al_finalizar=self._al_finalizar_edicion,
+            indice_inicial=indice_inicial,
         )
 
         # Registrar imágenes compuestas en la vista
         for indice, imagen in self._imagenes_compuestas.items():
             vista.registrar_imagen_compuesta(indice, imagen)
-
-        if indice_inicial > 0:
-            vista.ir_a_producto(indice_inicial)
 
         self._vista_actual = vista
         self.pagina.add(vista)
@@ -537,6 +535,9 @@ class AplicacionCatalogo:
                         alineacion_nombre=producto.alineacion_nombre or "centro",
                         color_nombre=producto.color_texto_nombre or (255, 255, 255),
                         imagen_fondo_precio=imagen_fondo_precio,
+                        ruta_fuente=producto.fuente,
+                        tamano_precio=producto.tamano_precio,
+                        tamano_nombre=producto.tamano_nombre,
                     )
                     imagenes_finales[indice] = imagen_final
 
@@ -556,10 +557,16 @@ class AplicacionCatalogo:
                     continue
 
                 # Determinar ruta de salida
-                ruta_base = os.path.dirname(producto.ruta_original)
-                ruta_base_padre = os.path.dirname(ruta_base)
+                ruta_madre = self.configuracion.ruta_carpeta_madre
                 carpeta_finalizada = f"{producto.categoria}{SUFIJO_FINALIZADO}"
-                ruta_carpeta_final = os.path.join(ruta_base_padre, carpeta_finalizada)
+
+                if ruta_madre:
+                    ruta_carpeta_final = os.path.join(ruta_madre, carpeta_finalizada)
+                else:
+                    ruta_base = os.path.dirname(producto.ruta_original)
+                    ruta_base_padre = os.path.dirname(ruta_base)
+                    ruta_carpeta_final = os.path.join(ruta_base_padre, carpeta_finalizada)
+
                 os.makedirs(ruta_carpeta_final, exist_ok=True)
 
                 nombre_archivo = f"{producto.nombre}.png"

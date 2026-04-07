@@ -22,6 +22,9 @@ class Producto:
     color_texto_precio: Optional[Tuple[int, int, int]] = None  # RGB
     color_texto_nombre: Optional[Tuple[int, int, int]] = None  # RGB
     ruta_fondo_precio: Optional[str] = None
+    fuente: Optional[str] = None
+    tamano_precio: Optional[int] = None
+    tamano_nombre: Optional[int] = None
     incluir_nombre: bool = True
     aprobado: bool = False
 
