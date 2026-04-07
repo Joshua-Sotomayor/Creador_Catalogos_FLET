@@ -436,10 +436,6 @@ class VistaEdicion(ft.UserControl):
                 controls=[
                     encabezado,
                     ft.Container(
-                        content=self._barra_modos,
-                        padding=ft.padding.symmetric(horizontal=20),
-                    ),
-                    ft.Container(
                         content=area_principal,
                         padding=ft.padding.symmetric(horizontal=20),
                     ),
