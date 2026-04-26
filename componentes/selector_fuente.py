@@ -82,13 +82,6 @@ class SelectorFuente(ft.Column):
                 color=COLOR_TEXTO_PRINCIPAL,
             ),
             self._dropdown,
-            ft.Container(
-                content=self._preview_texto,
-                padding=ft.padding.all(8),
-                border_radius=6,
-                bgcolor="#0a0a1a",
-                border=ft.border.all(1, COLOR_BORDE),
-            ),
         ]
 
     def _detectar_fuentes(self) -> List[Tuple[str, str]]:

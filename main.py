@@ -188,7 +188,11 @@ class AplicacionCatalogo:
                         imagenes_a_procesar.append(os.path.join(ruta_carpeta, archivo))
 
             if not imagenes_a_procesar:
-                self._actualizar_progreso("No se encontraron imagenes para convertir", "", 0)
+                carpeta_info = ruta_carpeta or os.path.dirname(ruta_imagen or "")
+                self.pagina.run_task(
+                    self._mostrar_error_con_volver,
+                    f"No se encontraron imagenes en:\n{carpeta_info}"
+                )
                 return
 
             total = len(imagenes_a_procesar)
@@ -202,7 +206,6 @@ class AplicacionCatalogo:
                     (i / total),
                 )
 
-                # Determinar carpeta de salida
                 carpeta_padre = os.path.dirname(ruta)
                 from configuracion.constantes import SUFIJO_CONVERTIDO
                 carpeta_salida = carpeta_padre + SUFIJO_CONVERTIDO
@@ -221,9 +224,34 @@ class AplicacionCatalogo:
             self.pagina.run_task(self._mostrar_exito_conversion, convertidas)
 
         except Exception as error:
-            self._actualizar_progreso(f"Error: {error}", "", 0)
+            self.pagina.run_task(
+                self._mostrar_error_con_volver, f"Error durante conversion: {error}"
+            )
             import traceback
             traceback.print_exc()
+
+    async def _mostrar_error_con_volver(self, mensaje: str):
+        """Muestra pantalla de error con boton de volver al inicio."""
+        import asyncio
+        await asyncio.sleep(0.3)
+        self._limpiar_pagina()
+        contenido = ft.Container(
+            content=ft.Column(controls=[
+                ft.Icon(ft.Icons.ERROR_OUTLINE, size=80, color=COLOR_ERROR),
+                ft.Text("Error", size=26, weight=ft.FontWeight.W_800, color=COLOR_ERROR),
+                ft.Text(mensaje, size=14, color=COLOR_TEXTO_SECUNDARIO, text_align=ft.TextAlign.CENTER),
+                ft.Container(height=20),
+                ft.ElevatedButton("Volver al inicio", icon=ft.Icons.HOME, style=ft.ButtonStyle(
+                    bgcolor=COLOR_ACENTO_PRIMARIO, color=COLOR_TEXTO_PRINCIPAL,
+                    padding=ft.padding.symmetric(horizontal=30, vertical=14),
+                    shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE)),
+                    on_click=lambda e: self._mostrar_vista_configuracion()),
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=12,
+               alignment=ft.MainAxisAlignment.CENTER),
+            alignment=ft.alignment.center, expand=True,
+        )
+        self.pagina.add(contenido)
+        self.pagina.update()
 
     async def _mostrar_exito_conversion(self, total: int):
         """Muestra pantalla de exito de conversion."""
@@ -376,7 +404,10 @@ class AplicacionCatalogo:
                 )
 
             if not categorias:
-                self._actualizar_progreso("❌ No se encontraron imágenes", "", 0)
+                self.pagina.run_task(
+                    self._mostrar_error_con_volver,
+                    f"No se encontraron imagenes en la carpeta seleccionada"
+                )
                 return
 
             self.configuracion.categorias = categorias
@@ -548,7 +579,10 @@ class AplicacionCatalogo:
             self.pagina.run_task(self._navegar_a_edicion)
 
         except Exception as error:
-            self._actualizar_progreso(f"❌ Error: {error}", "", 0)
+            self.pagina.run_task(
+                self._mostrar_error_con_volver,
+                f"Error durante el procesamiento: {error}"
+            )
             import traceback
             traceback.print_exc()
 

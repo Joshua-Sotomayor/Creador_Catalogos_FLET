@@ -14,6 +14,10 @@ from configuracion.constantes import (
     ALINEACION_CENTRO,
     ALINEACION_IZQUIERDA,
     ALINEACION_DERECHA,
+    FILAS_GRILLA_PRECIO,
+    COLUMNAS_GRILLA_PRECIO,
+    FILAS_GRILLA_NOMBRE,
+    COLUMNAS_GRILLA_NOMBRE,
 )
 
 
@@ -118,8 +122,8 @@ class ServicioTexto:
         color: Tuple[int, int, int] = (255, 255, 255),
         tamano_fuente: Optional[int] = None,
         ruta_fuente: Optional[str] = None,
-        filas_grilla: int = 5,
-        columnas_grilla: int = 5,
+        filas_grilla: int = FILAS_GRILLA_PRECIO,
+        columnas_grilla: int = COLUMNAS_GRILLA_PRECIO,
     ) -> Image.Image:
         """
         Agrega el texto del precio sobre la imagen en la posición de grilla indicada.
@@ -182,8 +186,8 @@ class ServicioTexto:
         color: Tuple[int, int, int] = (255, 255, 255),
         tamano_fuente: Optional[int] = None,
         ruta_fuente: Optional[str] = None,
-        filas_grilla: int = 3,
-        columnas_grilla: int = 3,
+        filas_grilla: int = FILAS_GRILLA_NOMBRE,
+        columnas_grilla: int = COLUMNAS_GRILLA_NOMBRE,
     ) -> Image.Image:
         """
         Agrega el nombre del producto sobre la imagen.
@@ -306,13 +310,15 @@ class ServicioTexto:
         if nombre_producto and posicion_nombre:
             resultado = self.agregar_nombre(
                 resultado, nombre_producto, posicion_nombre,
-                alineacion_nombre, color_nombre, tamano_fuente=tamano_nombre, ruta_fuente=ruta_fuente
+                alineacion_nombre, color_nombre, tamano_fuente=tamano_nombre, ruta_fuente=ruta_fuente,
+                filas_grilla=FILAS_GRILLA_NOMBRE, columnas_grilla=COLUMNAS_GRILLA_NOMBRE,
             )
 
         # 3. Agregar precio si existe
         if texto_precio and posicion_precio:
             resultado = self.agregar_precio(
-                resultado, texto_precio, posicion_precio, color_precio, tamano_fuente=tamano_precio, ruta_fuente=ruta_fuente
+                resultado, texto_precio, posicion_precio, color_precio, tamano_fuente=tamano_precio, ruta_fuente=ruta_fuente,
+                filas_grilla=FILAS_GRILLA_PRECIO, columnas_grilla=COLUMNAS_GRILLA_PRECIO,
             )
 
         return resultado
