@@ -127,3 +127,11 @@ Desde la pantalla de inicio es posible convertir imagenes individuales o carpeta
 ## Licencia
 
 Proyecto academico. Uso interno.
+
+## Generar Ejecutable (.exe)
+Para convertir el proyecto en un ejecutable de Windows independiente:
+
+`ash
+flet pack main.py --name "CatalogoCreator" --pyinstaller-build-args "--copy-metadata" "pymatting" "--copy-metadata" "rembg"
+``n
+El archivo ejecutable se generará dentro de la carpeta dist/.

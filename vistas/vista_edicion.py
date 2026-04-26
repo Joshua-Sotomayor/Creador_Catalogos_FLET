@@ -322,19 +322,21 @@ class VistaEdicion(ft.UserControl):
             padding=ft.padding.all(0),
         )
 
-        # === Layout 2x2 ===
-        fila_superior = ft.Row(
-            controls=[panel_imagen, seccion_precio], spacing=12,
-            alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.START,
+        # === Layout 2 Columnas ===
+        columna_izquierda = ft.Column(
+            controls=[panel_imagen, self._contenedor_nombre], spacing=12,
         )
-        fila_inferior = ft.Row(
-            controls=[self._contenedor_nombre, panel_inferior_derecho], spacing=12,
+        columna_derecha = ft.Column(
+            controls=[seccion_precio, panel_inferior_derecho], spacing=12,
+        )
+        layout_principal = ft.Row(
+            controls=[columna_izquierda, columna_derecha], spacing=12,
             alignment=ft.MainAxisAlignment.CENTER, vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
         return ft.Container(
             content=ft.Column(controls=[
-                encabezado, fila_superior, fila_inferior,
+                encabezado, layout_principal,
             ], spacing=8, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             padding=ft.padding.all(8),
         )
@@ -448,10 +450,14 @@ class VistaEdicion(ft.UserControl):
             # Proponer color de contraste
             imagen = self._imagenes_compuestas.get(self._indice_actual)
             if imagen:
-                color = self._servicio_color.obtener_color_contraste_avanzado(
-                    imagen, posicion
-                )
-                self._selector_color_precio.establecer_propuesta(color)
+                from configuracion.constantes import FILAS_GRILLA_PRECIO, COLUMNAS_GRILLA_PRECIO
+                try:
+                    color = self._servicio_color.obtener_color_contraste_avanzado(
+                        imagen, posicion, FILAS_GRILLA_PRECIO, COLUMNAS_GRILLA_PRECIO
+                    )
+                    self._selector_color_precio.establecer_propuesta(color)
+                except Exception as e:
+                    print(f"Error detectando contraste: {e}")
             self._generar_preview()
 
     def _al_seleccionar_posicion_nombre(self, posicion: Tuple[int, int]):

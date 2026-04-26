@@ -138,6 +138,10 @@ class ServicioDeteccionColor:
         x2 = min(ancho, int((columna + 1) * ancho_celda))
         y2 = min(alto, int((fila + 1) * alto_celda))
 
+        # Ensure region has valid width and height
+        if x2 <= x1 or y2 <= y1:
+            return (255, 255, 255) # Fallback if region is invalid
+
         color_fondo = ServicioDeteccionColor.obtener_color_dominante(
             imagen, region=(x1, y1, x2, y2)
         )

@@ -2,3 +2,4 @@ flet==0.25.2
 Pillow>=10.0.0
 rembg[cpu]>=2.0.50
 numpy>=1.24.0
+PyInstaller==6.20.0
