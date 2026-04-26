@@ -227,12 +227,12 @@ class ServicioTexto:
         }
         anchor = mapa_alineacion.get(alineacion, "mm")
 
-        # Ajustar posición x según alineación
+        # Ajustar posicion x segun alineacion
         ancho_celda = resultado.width / columnas_grilla
         if alineacion == ALINEACION_IZQUIERDA:
-            centro_x = int(columna * ancho_celda + ancho_celda * 0.1)
-        elif alineacion == ALINEACION_DERECHA:
             centro_x = int((columna + 1) * ancho_celda - ancho_celda * 0.1)
+        elif alineacion == ALINEACION_DERECHA:
+            centro_x = int(columna * ancho_celda + ancho_celda * 0.1)
 
         # Sombra
         color_sombra = (0, 0, 0, 150)
@@ -303,7 +303,9 @@ class ServicioTexto:
                 escala = 0.15 * (tamano_precio / 30.0)
 
             resultado = ServicioComposicion.agregar_fondo_precio(
-                resultado, imagen_fondo_precio, posicion_precio, escala_fondo_precio=escala
+                resultado, imagen_fondo_precio, posicion_precio,
+                filas_grilla=FILAS_GRILLA_PRECIO, columnas_grilla=COLUMNAS_GRILLA_PRECIO,
+                escala_fondo_precio=escala
             )
 
         # 2. Agregar nombre si existe

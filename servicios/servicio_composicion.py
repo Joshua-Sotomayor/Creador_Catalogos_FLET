@@ -7,6 +7,11 @@ from typing import Optional, Tuple
 
 from PIL import Image
 
+from configuracion.constantes import (
+    FILAS_GRILLA_PRECIO,
+    COLUMNAS_GRILLA_PRECIO,
+)
+
 
 class ServicioComposicion:
     """Gestiona la composición y superposición de imágenes."""
@@ -64,8 +69,8 @@ class ServicioComposicion:
         imagen_base: Image.Image,
         imagen_fondo_precio: Image.Image,
         posicion_celda: Tuple[int, int],
-        filas_grilla: int = 5,
-        columnas_grilla: int = 5,
+        filas_grilla: int = FILAS_GRILLA_PRECIO,
+        columnas_grilla: int = COLUMNAS_GRILLA_PRECIO,
         escala_fondo_precio: float = 0.15,
     ) -> Image.Image:
         """

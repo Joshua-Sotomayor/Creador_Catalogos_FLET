@@ -176,6 +176,7 @@ class VistaEdicion(ft.UserControl):
             bgcolor=COLOR_FONDO_SECUNDARIO,
             border_radius=RADIO_BORDE,
             border=ft.border.all(1, COLOR_BORDE),
+            height=510,
         )
 
         # === Panel derecho superior: Precio ===
@@ -200,26 +201,28 @@ class VistaEdicion(ft.UserControl):
             min=10, max=200, value=50, divisions=190, label="{value}",
             active_color=COLOR_ACENTO_SECUNDARIO, on_change=self._al_cambiar_tamano_etiqueta, width=200,
         )
-        sliders_precio = ft.Column(controls=[
+        sliders_y_color_precio = ft.Column(controls=[
             ft.Text("Texto", size=11, color=COLOR_TEXTO_SECUNDARIO), self._slider_tamano_precio,
             ft.Text("Etiqueta", size=11, color=COLOR_TEXTO_SECUNDARIO), self._slider_tamano_etiqueta,
+            self._selector_color_precio,
         ], spacing=2, width=210)
         fila_grilla_precio = ft.Row(
-            controls=[self._matriz_precio, sliders_precio], spacing=8,
+            controls=[self._matriz_precio, sliders_y_color_precio], spacing=8,
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
         seccion_precio = ft.Container(
             content=ft.Column(controls=[
                 ft.Text("Precio", size=14, weight=ft.FontWeight.W_700, color=COLOR_TEXTO_PRINCIPAL),
-                self._campo_precio, fila_grilla_precio, self._selector_color_precio,
+                self._campo_precio, fila_grilla_precio,
             ], spacing=8),
             padding=ft.padding.all(12), border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO, border=ft.border.all(1, COLOR_BORDE),
+            height=510,
         )
 
         # === Panel inferior izquierdo: Nombre ===
         self._campo_nombre = ft.TextField(
-            label="Nombre del producto", width=200, height=45, text_size=13,
+            label="Nombre", width=180, height=42, text_size=13,
             border_color=COLOR_BORDE, focused_border_color=COLOR_ACENTO_PRIMARIO,
             color=COLOR_TEXTO_PRINCIPAL, bgcolor="#0a0a1a", border_radius=8,
             prefix_icon=ft.Icons.LABEL, on_change=self._al_cambiar_nombre,
@@ -250,21 +253,25 @@ class VistaEdicion(ft.UserControl):
             min=8, max=120, value=20, divisions=112, label="{value}",
             active_color=COLOR_ACENTO_PRIMARIO, on_change=self._al_cambiar_tamano_nombre, width=200,
         )
-        sliders_nombre = ft.Column(controls=[
+        sliders_y_color_nombre = ft.Column(controls=[
             ft.Text("Texto", size=11, color=COLOR_TEXTO_SECUNDARIO), self._slider_tamano_nombre,
             self._dropdown_alineacion,
+            self._selector_color_nombre,
         ], spacing=2, width=210)
         fila_grilla_nombre = ft.Row(
-            controls=[self._matriz_nombre, sliders_nombre], spacing=8,
+            controls=[self._matriz_nombre, sliders_y_color_nombre], spacing=8,
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
+        # Fila superior del nombre: titulo + switch + campo nombre
+        fila_encabezado_nombre = ft.Row(controls=[
+            ft.Text("Nombre", size=14, weight=ft.FontWeight.W_700, color=COLOR_TEXTO_PRINCIPAL),
+            self._switch_incluir_nombre,
+            self._campo_nombre,
+        ], spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+
         self._contenedor_nombre = ft.Container(
             content=ft.Column(controls=[
-                ft.Row(controls=[
-                    ft.Text("Nombre", size=14, weight=ft.FontWeight.W_700, color=COLOR_TEXTO_PRINCIPAL),
-                    self._switch_incluir_nombre,
-                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                self._campo_nombre, fila_grilla_nombre, self._selector_color_nombre,
+                fila_encabezado_nombre, fila_grilla_nombre,
             ], spacing=8),
             padding=ft.padding.all(12), border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO, border=ft.border.all(1, COLOR_BORDE),
