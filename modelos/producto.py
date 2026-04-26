@@ -25,6 +25,7 @@ class Producto:
     fuente: Optional[str] = None
     tamano_precio: Optional[int] = None
     tamano_nombre: Optional[int] = None
+    tamano_etiqueta: Optional[int] = None
     incluir_nombre: bool = True
     aprobado: bool = False
 

@@ -266,6 +266,7 @@ class ServicioTexto:
         ruta_fuente: Optional[str] = None,
         tamano_precio: Optional[int] = None,
         tamano_nombre: Optional[int] = None,
+        tamano_etiqueta: Optional[int] = None,
     ) -> Image.Image:
         """
         Genera una vista previa completa con todos los elementos aplicados.
@@ -280,6 +281,7 @@ class ServicioTexto:
             alineacion_nombre: Alineación del nombre.
             color_nombre: Color del nombre.
             imagen_fondo_precio: Imagen de fondo para el precio.
+            tamano_etiqueta: Tamaño independiente para la etiqueta de fondo.
 
         Returns:
             Imagen de vista previa completa.
@@ -288,10 +290,12 @@ class ServicioTexto:
 
         resultado = imagen_base.copy()
 
-        # 1. Agregar fondo de precio si existe
+        # 1. Agregar fondo de precio si existe (usa tamano_etiqueta independiente)
         if imagen_fondo_precio and posicion_precio:
             escala = 0.15
-            if tamano_precio:
+            if tamano_etiqueta:
+                escala = 0.15 * (tamano_etiqueta / 50.0)
+            elif tamano_precio:
                 escala = 0.15 * (tamano_precio / 30.0)
 
             resultado = ServicioComposicion.agregar_fondo_precio(

@@ -210,9 +210,15 @@ class VistaEdicion(ft.UserControl):
         )
 
         self._slider_tamano_precio = ft.Slider(
-            min=10, max=150, value=30, divisions=140, label="Tamaño: {value}",
+            min=10, max=150, value=30, divisions=140, label="Tamaño precio: {value}",
             active_color=COLOR_ACENTO_PRIMARIO,
             on_change=self._al_cambiar_tamano_precio,
+        )
+
+        self._slider_tamano_etiqueta = ft.Slider(
+            min=10, max=200, value=50, divisions=190, label="Tamaño etiqueta: {value}",
+            active_color=COLOR_ACENTO_SECUNDARIO,
+            on_change=self._al_cambiar_tamano_etiqueta,
         )
 
         seccion_precio = ft.Container(
@@ -222,8 +228,10 @@ class VistaEdicion(ft.UserControl):
                             color=COLOR_TEXTO_PRINCIPAL),
                     self._campo_precio,
                     self._matriz_precio,
-                    ft.Text("Tamaño del texto", size=13, color=COLOR_TEXTO_SECUNDARIO),
+                    ft.Text("Tamaño del texto del precio", size=13, color=COLOR_TEXTO_SECUNDARIO),
                     self._slider_tamano_precio,
+                    ft.Text("Tamaño de la etiqueta (fondo)", size=13, color=COLOR_TEXTO_SECUNDARIO),
+                    self._slider_tamano_etiqueta,
                     self._selector_color_precio,
                 ],
                 spacing=12,
@@ -491,6 +499,11 @@ class VistaEdicion(ft.UserControl):
         else:
             self._slider_tamano_precio.value = 30  # Default referencial
 
+        if producto.tamano_etiqueta:
+            self._slider_tamano_etiqueta.value = producto.tamano_etiqueta
+        else:
+            self._slider_tamano_etiqueta.value = 50  # Default referencial
+
         if producto.tamano_nombre:
             self._slider_tamano_nombre.value = producto.tamano_nombre
         else:
@@ -589,6 +602,11 @@ class VistaEdicion(ft.UserControl):
             self.productos[self._indice_actual].tamano_precio = int(e.control.value)
             self._generar_preview()
 
+    def _al_cambiar_tamano_etiqueta(self, e):
+        if self._indice_actual < len(self.productos):
+            self.productos[self._indice_actual].tamano_etiqueta = int(e.control.value)
+            self._generar_preview()
+
     def _al_cambiar_tamano_nombre(self, e):
         if self._indice_actual < len(self.productos):
             self.productos[self._indice_actual].tamano_nombre = int(e.control.value)
@@ -635,6 +653,7 @@ class VistaEdicion(ft.UserControl):
             ruta_fuente=producto.fuente or self._selector_fuente.obtener_fuente(),
             tamano_precio=producto.tamano_precio,
             tamano_nombre=producto.tamano_nombre,
+            tamano_etiqueta=producto.tamano_etiqueta,
         )
 
         self._vista_previa.actualizar_imagen(preview)
@@ -683,13 +702,14 @@ class VistaEdicion(ft.UserControl):
         producto.color_texto_precio = self._selector_color_precio.obtener_color()
         producto.color_texto_nombre = self._selector_color_nombre.obtener_color()
         producto.alineacion_nombre = self._dropdown_alineacion.value
+        producto.tamano_precio = int(self._slider_tamano_precio.value)
+        producto.tamano_nombre = int(self._slider_tamano_nombre.value)
+        producto.tamano_etiqueta = int(self._slider_tamano_etiqueta.value)
+        producto.fuente = self._selector_fuente.obtener_fuente()
 
     def _al_finalizar_edicion(self, e):
         """Finaliza la edición y pasa a la vista de previsualización."""
         self._guardar_producto_actual()
-
-        if self.al_finalizar:
-            self.al_finalizar(self.productos)
 
         if self.al_finalizar:
             self.al_finalizar(self.productos)

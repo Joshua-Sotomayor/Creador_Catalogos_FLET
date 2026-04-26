@@ -449,6 +449,11 @@ class AplicacionCatalogo:
 
     def _al_exportar(self, productos: List[Producto]):
         """Exporta todas las imágenes finales a carpetas finalizadas."""
+        # IMPORTANTE: Capturar las imágenes ANTES de limpiar la página
+        imagenes_precapturadas = {}
+        if hasattr(self._vista_actual, 'obtener_imagenes_finales'):
+            imagenes_precapturadas = self._vista_actual.obtener_imagenes_finales()
+
         self._limpiar_pagina()
 
         self._etiqueta_estado_export = ft.Text(
@@ -492,23 +497,18 @@ class AplicacionCatalogo:
         # Exportar en hilo separado
         hilo = threading.Thread(
             target=self._ejecutar_exportacion,
-            args=(productos,),
+            args=(productos, imagenes_precapturadas),
             daemon=True,
         )
         hilo.start()
 
-    def _ejecutar_exportacion(self, productos: List[Producto]):
+    def _ejecutar_exportacion(self, productos: List[Producto], imagenes_precapturadas: dict = None):
         """Ejecuta la exportación de imágenes finales."""
         try:
-            vista_preview = self._vista_actual
-            imagenes_finales = {}
-
-            # Generar imágenes finales si no existen
-            if hasattr(vista_preview, 'obtener_imagenes_finales'):
-                imagenes_finales = vista_preview.obtener_imagenes_finales()
+            imagenes_finales = imagenes_precapturadas or {}
 
             if not imagenes_finales:
-                # Regenerar
+                # Regenerar desde los datos del producto
                 servicio_texto = ServicioTexto()
                 for indice, producto in enumerate(productos):
                     imagen_base = self._imagenes_compuestas.get(indice)
@@ -538,6 +538,7 @@ class AplicacionCatalogo:
                         ruta_fuente=producto.fuente,
                         tamano_precio=producto.tamano_precio,
                         tamano_nombre=producto.tamano_nombre,
+                        tamano_etiqueta=producto.tamano_etiqueta,
                     )
                     imagenes_finales[indice] = imagen_final
 

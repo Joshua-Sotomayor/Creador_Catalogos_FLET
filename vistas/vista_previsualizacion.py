@@ -214,6 +214,10 @@ class VistaPrevisualizacion(ft.UserControl):
                     alineacion_nombre=producto.alineacion_nombre or "centro",
                     color_nombre=producto.color_texto_nombre or (255, 255, 255),
                     imagen_fondo_precio=imagen_fondo_precio,
+                    ruta_fuente=producto.fuente,
+                    tamano_precio=producto.tamano_precio,
+                    tamano_nombre=producto.tamano_nombre,
+                    tamano_etiqueta=producto.tamano_etiqueta,
                 )
                 self._imagenes_finales[indice] = imagen_final
             except Exception as error:
