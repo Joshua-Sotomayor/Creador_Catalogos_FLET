@@ -154,10 +154,10 @@ class VistaEdicion(ft.UserControl):
                 ],
                 spacing=8,
             ),
-            padding=ft.padding.symmetric(horizontal=20, vertical=10),
+            padding=ft.padding.symmetric(horizontal=20, vertical=8),
         )
 
-        # === Barra de herramientas de modos ===
+        # === Barra de herramientas de modos (oculta pero conservada) ===
         self._barra_modos = BarraHerramientas(
             al_cambiar_modo=self._al_cambiar_modo,
             modo_inicial=MODO_MANUAL,
@@ -165,28 +165,28 @@ class VistaEdicion(ft.UserControl):
 
         # === Panel izquierdo: Vista previa ===
         self._vista_previa = VistaPreviaImagen(
-            ancho=480,
-            alto=480,
+            ancho=460,
+            alto=460,
             titulo="Vista previa",
         )
 
         panel_izquierdo = ft.Container(
             content=self._vista_previa,
-            padding=ft.padding.all(16),
+            padding=ft.padding.all(12),
             bgcolor=COLOR_FONDO_SECUNDARIO,
             border_radius=RADIO_BORDE,
             border=ft.border.all(1, COLOR_BORDE),
         )
 
-        # === Panel derecho: Controles ===
+        # === Panel derecho: Controles compactos ===
 
-        # -- Precio --
+        # -- Campo de precio --
         self._campo_precio = ft.TextField(
             label="Precio",
             hint_text="Ej: $29.99",
-            width=250,
-            height=50,
-            text_size=16,
+            width=200,
+            height=45,
+            text_size=15,
             border_color=COLOR_BORDE,
             focused_border_color=COLOR_ACENTO_PRIMARIO,
             color=COLOR_TEXTO_PRINCIPAL,
@@ -196,10 +196,11 @@ class VistaEdicion(ft.UserControl):
             on_change=self._al_cambiar_precio,
         )
 
+        # -- Grilla de precio 6x6 --
         self._matriz_precio = MatrizPosicion(
             filas=FILAS_GRILLA_PRECIO,
             columnas=COLUMNAS_GRILLA_PRECIO,
-            titulo="Posición del precio (5×5)",
+            titulo="Posicion del precio (6x6)",
             al_seleccionar=self._al_seleccionar_posicion_precio,
         )
 
@@ -210,33 +211,50 @@ class VistaEdicion(ft.UserControl):
         )
 
         self._slider_tamano_precio = ft.Slider(
-            min=10, max=150, value=30, divisions=140, label="Tamaño precio: {value}",
+            min=10, max=150, value=30, divisions=140, label="{value}",
             active_color=COLOR_ACENTO_PRIMARIO,
             on_change=self._al_cambiar_tamano_precio,
+            width=160,
         )
 
         self._slider_tamano_etiqueta = ft.Slider(
-            min=10, max=200, value=50, divisions=190, label="Tamaño etiqueta: {value}",
+            min=10, max=200, value=50, divisions=190, label="{value}",
             active_color=COLOR_ACENTO_SECUNDARIO,
             on_change=self._al_cambiar_tamano_etiqueta,
+            width=160,
+        )
+
+        # Sliders apilados al lado de la grilla
+        sliders_precio = ft.Column(
+            controls=[
+                ft.Text("Texto", size=11, color=COLOR_TEXTO_SECUNDARIO),
+                self._slider_tamano_precio,
+                ft.Text("Etiqueta", size=11, color=COLOR_TEXTO_SECUNDARIO),
+                self._slider_tamano_etiqueta,
+            ],
+            spacing=2,
+            width=170,
+        )
+
+        # Fila: grilla + sliders
+        fila_grilla_precio = ft.Row(
+            controls=[self._matriz_precio, sliders_precio],
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
         seccion_precio = ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Text("💰 Precio", size=15, weight=ft.FontWeight.W_700,
+                    ft.Text("Precio", size=14, weight=ft.FontWeight.W_700,
                             color=COLOR_TEXTO_PRINCIPAL),
                     self._campo_precio,
-                    self._matriz_precio,
-                    ft.Text("Tamaño del texto del precio", size=13, color=COLOR_TEXTO_SECUNDARIO),
-                    self._slider_tamano_precio,
-                    ft.Text("Tamaño de la etiqueta (fondo)", size=13, color=COLOR_TEXTO_SECUNDARIO),
-                    self._slider_tamano_etiqueta,
+                    fila_grilla_precio,
                     self._selector_color_precio,
                 ],
-                spacing=12,
+                spacing=8,
             ),
-            padding=ft.padding.all(16),
+            padding=ft.padding.all(12),
             border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO,
             border=ft.border.all(1, COLOR_BORDE),
@@ -245,9 +263,9 @@ class VistaEdicion(ft.UserControl):
         # -- Nombre --
         self._campo_nombre = ft.TextField(
             label="Nombre del producto",
-            width=250,
-            height=50,
-            text_size=14,
+            width=200,
+            height=45,
+            text_size=13,
             border_color=COLOR_BORDE,
             focused_border_color=COLOR_ACENTO_PRIMARIO,
             color=COLOR_TEXTO_PRINCIPAL,
@@ -258,32 +276,31 @@ class VistaEdicion(ft.UserControl):
         )
 
         self._switch_incluir_nombre = ft.Switch(
-            label="Incluir nombre",
+            label="Incluir",
             value=self.incluir_nombre,
             active_color=COLOR_ACENTO_PRIMARIO,
-            label_style=ft.TextStyle(color=COLOR_TEXTO_PRINCIPAL, size=12),
+            label_style=ft.TextStyle(color=COLOR_TEXTO_PRINCIPAL, size=11),
             on_change=self._al_cambiar_switch_nombre,
         )
 
         self._matriz_nombre = MatrizPosicion(
             filas=FILAS_GRILLA_NOMBRE,
             columnas=COLUMNAS_GRILLA_NOMBRE,
-            titulo="Posición del nombre (3×3)",
+            titulo="Posicion del nombre (6x6)",
             al_seleccionar=self._al_seleccionar_posicion_nombre,
-            tamano_celda=50,
         )
 
         self._dropdown_alineacion = ft.Dropdown(
-            label="Alineación",
+            label="Alineacion",
             options=[
                 ft.dropdown.Option(key=ALINEACION_IZQUIERDA, text="Izquierda"),
                 ft.dropdown.Option(key=ALINEACION_CENTRO, text="Centro"),
                 ft.dropdown.Option(key=ALINEACION_DERECHA, text="Derecha"),
             ],
             value=ALINEACION_CENTRO,
-            width=200,
-            height=50,
-            text_size=13,
+            width=140,
+            height=42,
+            text_size=12,
             border_color=COLOR_BORDE,
             focused_border_color=COLOR_ACENTO_PRIMARIO,
             color=COLOR_TEXTO_PRINCIPAL,
@@ -299,9 +316,27 @@ class VistaEdicion(ft.UserControl):
         )
 
         self._slider_tamano_nombre = ft.Slider(
-            min=8, max=120, value=20, divisions=112, label="Tamaño: {value}",
+            min=8, max=120, value=20, divisions=112, label="{value}",
             active_color=COLOR_ACENTO_PRIMARIO,
             on_change=self._al_cambiar_tamano_nombre,
+            width=160,
+        )
+
+        # Sliders y opciones al lado de la grilla del nombre
+        sliders_nombre = ft.Column(
+            controls=[
+                ft.Text("Texto", size=11, color=COLOR_TEXTO_SECUNDARIO),
+                self._slider_tamano_nombre,
+                self._dropdown_alineacion,
+            ],
+            spacing=2,
+            width=170,
+        )
+
+        fila_grilla_nombre = ft.Row(
+            controls=[self._matriz_nombre, sliders_nombre],
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
         self._contenedor_nombre = ft.Container(
@@ -309,28 +344,25 @@ class VistaEdicion(ft.UserControl):
                 controls=[
                     ft.Row(
                         controls=[
-                            ft.Text("✏️ Nombre", size=15, weight=ft.FontWeight.W_700,
+                            ft.Text("Nombre", size=14, weight=ft.FontWeight.W_700,
                                     color=COLOR_TEXTO_PRINCIPAL),
                             self._switch_incluir_nombre,
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
                     self._campo_nombre,
-                    self._matriz_nombre,
-                    self._dropdown_alineacion,
-                    ft.Text("Tamaño del texto", size=13, color=COLOR_TEXTO_SECUNDARIO),
-                    self._slider_tamano_nombre,
+                    fila_grilla_nombre,
                     self._selector_color_nombre,
                 ],
-                spacing=12,
+                spacing=8,
             ),
-            padding=ft.padding.all(16),
+            padding=ft.padding.all(12),
             border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO,
             border=ft.border.all(1, COLOR_BORDE),
         )
 
-        # -- Fondo del precio --
+        # -- Fondo del precio (oculto) --
         self._galeria_fondos_precio = GaleriaImagenes(
             titulo="Fondos para el precio",
             al_seleccionar=self._al_seleccionar_fondo_precio,
@@ -339,30 +371,19 @@ class VistaEdicion(ft.UserControl):
             self._galeria_fondos_precio.cargar_desde_lista(self.imagenes_fondo_precio)
 
         self._contenedor_fondo_precio = ft.Container(
-            content=ft.Column(
-                controls=[
-                    ft.Text("🎨 Fondo decorativo del precio", size=15,
-                            weight=ft.FontWeight.W_700, color=COLOR_TEXTO_PRINCIPAL),
-                    self._galeria_fondos_precio,
-                ],
-                spacing=12,
-            ),
-            padding=ft.padding.all(16),
-            border_radius=RADIO_BORDE,
-            bgcolor=COLOR_FONDO_SECUNDARIO,
-            border=ft.border.all(1, COLOR_BORDE),
+            content=self._galeria_fondos_precio,
             visible=False,
         )
 
-        # -- Selector de fuente --
+        # -- Selector de fuente (inline) --
         self._selector_fuente = SelectorFuente(
-            titulo="Fuente tipográfica",
+            titulo="Fuente",
             al_cambiar=self._al_cambiar_fuente,
         )
 
         seccion_fuente = ft.Container(
             content=self._selector_fuente,
-            padding=ft.padding.all(16),
+            padding=ft.padding.all(12),
             border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO,
             border=ft.border.all(1, COLOR_BORDE),
@@ -375,56 +396,61 @@ class VistaEdicion(ft.UserControl):
                 self._contenedor_fondo_precio,
                 seccion_fuente,
             ],
-            spacing=12,
-            width=380,
+            spacing=8,
+            width=420,
+            scroll=ft.ScrollMode.AUTO,
         )
 
-        # === Botones de acción ===
+        # === Botones de accion ===
         self._mensaje_estado = ft.Text("", size=12, color=COLOR_ADVERTENCIA)
 
         botones_accion = ft.Row(
             controls=[
                 ft.ElevatedButton(
-                    "⬅️ Anterior",
+                    "Anterior",
+                    icon=ft.Icons.ARROW_BACK,
                     style=ft.ButtonStyle(
                         bgcolor=COLOR_FONDO_TARJETA,
                         color=COLOR_TEXTO_PRINCIPAL,
-                        padding=ft.padding.symmetric(horizontal=20, vertical=12),
+                        padding=ft.padding.symmetric(horizontal=16, vertical=10),
                         shape=ft.RoundedRectangleBorder(radius=8),
                     ),
                     on_click=self._al_anterior,
                 ),
                 ft.ElevatedButton(
-                    "👁️ Actualizar preview",
+                    "Actualizar preview",
+                    icon=ft.Icons.REFRESH,
                     style=ft.ButtonStyle(
                         bgcolor=COLOR_ACENTO_SECUNDARIO,
                         color=COLOR_TEXTO_PRINCIPAL,
-                        padding=ft.padding.symmetric(horizontal=20, vertical=12),
+                        padding=ft.padding.symmetric(horizontal=16, vertical=10),
                         shape=ft.RoundedRectangleBorder(radius=8),
                     ),
                     on_click=self._al_actualizar_preview,
                 ),
                 ft.ElevatedButton(
-                    "✅ Confirmar y Siguiente",
+                    "Confirmar y Siguiente",
+                    icon=ft.Icons.ARROW_FORWARD,
                     style=ft.ButtonStyle(
                         bgcolor=COLOR_ACENTO_PRIMARIO,
                         color=COLOR_TEXTO_PRINCIPAL,
-                        padding=ft.padding.symmetric(horizontal=20, vertical=12),
+                        padding=ft.padding.symmetric(horizontal=16, vertical=10),
                         shape=ft.RoundedRectangleBorder(radius=8),
                     ),
                     on_click=self._al_confirmar_siguiente,
                 ),
             ],
             alignment=ft.MainAxisAlignment.CENTER,
-            spacing=12,
+            spacing=10,
         )
 
         boton_finalizar = ft.ElevatedButton(
-            "🏁 Finalizar y pasar a previsualización",
+            "Finalizar y guardar",
+            icon=ft.Icons.SAVE,
             style=ft.ButtonStyle(
                 bgcolor=COLOR_EXITO,
                 color=COLOR_TEXTO_PRINCIPAL,
-                padding=ft.padding.symmetric(horizontal=30, vertical=14),
+                padding=ft.padding.symmetric(horizontal=28, vertical=12),
                 shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE),
                 text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_600),
             ),
@@ -434,7 +460,7 @@ class VistaEdicion(ft.UserControl):
         # === Layout principal ===
         area_principal = ft.Row(
             controls=[panel_izquierdo, panel_derecho],
-            spacing=20,
+            spacing=16,
             alignment=ft.MainAxisAlignment.CENTER,
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
@@ -445,16 +471,16 @@ class VistaEdicion(ft.UserControl):
                     encabezado,
                     ft.Container(
                         content=area_principal,
-                        padding=ft.padding.symmetric(horizontal=20),
+                        padding=ft.padding.symmetric(horizontal=16),
                     ),
                     self._mensaje_estado,
                     botones_accion,
                     boton_finalizar,
                 ],
-                spacing=12,
+                spacing=8,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            padding=ft.padding.all(10),
+            padding=ft.padding.all(8),
         )
 
     # === Carga de producto ===

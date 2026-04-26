@@ -1,6 +1,6 @@
 """
-Vista de previsualización final (Paso 4).
-Muestra todas las imágenes finales para aprobación antes de exportar.
+Vista de previsualizacion final (Paso 4).
+Muestra todas las imagenes finales con botones para editar o guardar.
 """
 import flet as ft
 from typing import Callable, Dict, List, Optional
@@ -33,9 +33,8 @@ from utilidades.ayudantes_imagen import (
 
 class VistaPrevisualizacion(ft.UserControl):
     """
-    Vista de previsualización final.
-    Muestra las imágenes resultantes para que el usuario las apruebe o edite
-    antes de exportar a las carpetas finales.
+    Vista de previsualizacion final.
+    Muestra las imagenes resultantes con opciones de editar o guardar.
     """
 
     def __init__(
@@ -45,6 +44,7 @@ class VistaPrevisualizacion(ft.UserControl):
         imagenes_compuestas: Dict[int, Image.Image],
         al_editar_producto: Optional[Callable[[int], None]] = None,
         al_exportar: Optional[Callable[[List[Producto]], None]] = None,
+        al_exportar_individual: Optional[Callable[[int], None]] = None,
     ):
         super().__init__()
         self.pagina = pagina
@@ -52,6 +52,7 @@ class VistaPrevisualizacion(ft.UserControl):
         self.imagenes_compuestas = imagenes_compuestas
         self.al_editar_producto = al_editar_producto
         self.al_exportar = al_exportar
+        self.al_exportar_individual = al_exportar_individual
         self._servicio_texto = ServicioTexto()
         self._imagenes_finales: Dict[int, Image.Image] = {}
         self._tarjetas: Dict[int, ft.Container] = {}
@@ -59,7 +60,7 @@ class VistaPrevisualizacion(ft.UserControl):
         self.expand = True
 
     def did_mount(self):
-        """Generar las imágenes de previsualización al montarse en la página."""
+        """Generar las imagenes de previsualizacion al montarse en la pagina."""
         self._generar_todas_las_previews()
 
     def build(self):
@@ -82,7 +83,7 @@ class VistaPrevisualizacion(ft.UserControl):
                         controls=[
                             ft.Icon(ft.Icons.PREVIEW, color=COLOR_ACENTO_PRIMARIO, size=28),
                             ft.Text(
-                                "Previsualización final",
+                                "Previsualizacion final",
                                 size=24,
                                 weight=ft.FontWeight.W_800,
                                 color=COLOR_TEXTO_PRINCIPAL,
@@ -92,7 +93,7 @@ class VistaPrevisualizacion(ft.UserControl):
                         spacing=10,
                     ),
                     ft.Text(
-                        "Revisa cada imagen antes de exportar. Puedes aprobarlas individualmente o todas a la vez.",
+                        "Revisa las imagenes. Puedes editar cualquiera o guardarlas todas.",
                         size=13,
                         color=COLOR_TEXTO_SECUNDARIO,
                         text_align=ft.TextAlign.CENTER,
@@ -101,65 +102,30 @@ class VistaPrevisualizacion(ft.UserControl):
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=8,
             ),
-            padding=ft.padding.symmetric(vertical=20),
+            padding=ft.padding.symmetric(vertical=16),
         )
 
-        # Contadores
-        self._etiqueta_aprobadas = ft.Text(
-            "0 aprobadas",
-            size=13,
-            color=COLOR_EXITO,
-            weight=ft.FontWeight.W_600,
-        )
-        self._etiqueta_pendientes = ft.Text(
-            f"{len(self.productos)} pendientes",
-            size=13,
-            color=COLOR_TEXTO_SECUNDARIO,
-        )
-
-        fila_contadores = ft.Row(
-            controls=[self._etiqueta_aprobadas, self._etiqueta_pendientes],
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=20,
-        )
-
-        # Grilla de imágenes
+        # Grilla de imagenes
         self._grilla_productos = ft.GridView(
             expand=True,
             max_extent=320,
-            child_aspect_ratio=0.75,
+            child_aspect_ratio=0.78,
             spacing=16,
             run_spacing=16,
         )
 
-        # Botones de acción
-        botones = ft.Row(
-            controls=[
-                ft.ElevatedButton(
-                    "✅ Aceptar todo",
-                    style=ft.ButtonStyle(
-                        bgcolor=COLOR_ACENTO_SECUNDARIO,
-                        color=COLOR_TEXTO_PRINCIPAL,
-                        padding=ft.padding.symmetric(horizontal=30, vertical=14),
-                        shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE),
-                        text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_600),
-                    ),
-                    on_click=self._al_aceptar_todo,
-                ),
-                ft.ElevatedButton(
-                    "📁 Exportar catálogo",
-                    style=ft.ButtonStyle(
-                        bgcolor=COLOR_EXITO,
-                        color=COLOR_TEXTO_PRINCIPAL,
-                        padding=ft.padding.symmetric(horizontal=30, vertical=14),
-                        shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE),
-                        text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_600),
-                    ),
-                    on_click=self._al_exportar_catalogo,
-                ),
-            ],
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=16,
+        # Boton global: Guardar todas
+        boton_guardar_todas = ft.ElevatedButton(
+            "Guardar todas las imagenes",
+            icon=ft.Icons.SAVE_ALT,
+            style=ft.ButtonStyle(
+                bgcolor=COLOR_EXITO,
+                color=COLOR_TEXTO_PRINCIPAL,
+                padding=ft.padding.symmetric(horizontal=30, vertical=14),
+                shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE),
+                text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_600),
+            ),
+            on_click=self._al_guardar_todas,
         )
 
         self._mensaje_estado = ft.Text("", size=13, text_align=ft.TextAlign.CENTER)
@@ -168,7 +134,6 @@ class VistaPrevisualizacion(ft.UserControl):
             content=ft.Column(
                 controls=[
                     encabezado,
-                    fila_contadores,
                     ft.Divider(height=1, color=COLOR_BORDE),
                     ft.Container(
                         content=self._grilla_productos,
@@ -176,9 +141,13 @@ class VistaPrevisualizacion(ft.UserControl):
                         expand=True,
                     ),
                     self._mensaje_estado,
-                    ft.Container(content=botones, padding=ft.padding.symmetric(vertical=20)),
+                    ft.Container(
+                        content=boton_guardar_todas,
+                        padding=ft.padding.symmetric(vertical=16),
+                        alignment=ft.alignment.center,
+                    ),
                 ],
-                spacing=12,
+                spacing=10,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 expand=True,
             ),
@@ -187,7 +156,7 @@ class VistaPrevisualizacion(ft.UserControl):
         )
 
     def _generar_todas_las_previews(self):
-        """Genera las imágenes de preview para todos los productos."""
+        """Genera las imagenes de preview para todos los productos."""
         for indice, producto in enumerate(self.productos):
             imagen_base = self.imagenes_compuestas.get(indice)
             if not imagen_base:
@@ -235,7 +204,10 @@ class VistaPrevisualizacion(ft.UserControl):
             self._tarjetas[indice] = tarjeta
             self._grilla_productos.controls.append(tarjeta)
 
-        self._actualizar_contadores()
+        try:
+            self._grilla_productos.update()
+        except Exception:
+            pass
 
     def _crear_tarjeta_producto(self, indice: int, producto: Producto) -> ft.Container:
         """Crea una tarjeta visual para un producto."""
@@ -260,50 +232,37 @@ class VistaPrevisualizacion(ft.UserControl):
                 border_radius=8,
             )
 
-        # Estado
-        icono_estado = ft.Icon(
-            ft.Icons.CHECK_CIRCLE if producto.aprobado else ft.Icons.PENDING,
-            color=COLOR_EXITO if producto.aprobado else COLOR_TEXTO_SECUNDARIO,
-            size=18,
-        )
-
-        # Botones
+        # Botones: Editar y Guardar
         botones = ft.Row(
             controls=[
                 ft.TextButton(
-                    "✅ Aprobar",
-                    style=ft.ButtonStyle(color=COLOR_EXITO),
-                    on_click=lambda e, i=indice: self._al_aprobar(i),
-                ),
-                ft.TextButton(
-                    "✏️ Editar",
+                    "Editar",
+                    icon=ft.Icons.EDIT,
                     style=ft.ButtonStyle(color=COLOR_ACENTO_PRIMARIO),
                     on_click=lambda e, i=indice: self._al_editar(i),
+                ),
+                ft.TextButton(
+                    "Guardar",
+                    icon=ft.Icons.SAVE,
+                    style=ft.ButtonStyle(color=COLOR_EXITO),
+                    on_click=lambda e, i=indice: self._al_guardar_individual(i),
                 ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_EVENLY,
             spacing=0,
         )
 
-        color_borde = COLOR_EXITO if producto.aprobado else COLOR_BORDE
-
         return ft.Container(
             content=ft.Column(
                 controls=[
                     control_imagen,
-                    ft.Row(
-                        controls=[
-                            ft.Text(
-                                producto.obtener_nombre_limpio(),
-                                size=13,
-                                weight=ft.FontWeight.W_600,
-                                color=COLOR_TEXTO_PRINCIPAL,
-                                max_lines=1,
-                                overflow=ft.TextOverflow.ELLIPSIS,
-                            ),
-                            icono_estado,
-                        ],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    ft.Text(
+                        producto.obtener_nombre_limpio(),
+                        size=13,
+                        weight=ft.FontWeight.W_600,
+                        color=COLOR_TEXTO_PRINCIPAL,
+                        max_lines=1,
+                        overflow=ft.TextOverflow.ELLIPSIS,
                     ),
                     ft.Text(
                         producto.precio or "Sin precio",
@@ -313,72 +272,49 @@ class VistaPrevisualizacion(ft.UserControl):
                     ),
                     botones,
                 ],
-                spacing=8,
+                spacing=6,
             ),
             padding=ft.padding.all(12),
             border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO,
-            border=ft.border.all(2, color_borde),
-            animate=ft.animation.Animation(200, ft.AnimationCurve.EASE_IN_OUT),
+            border=ft.border.all(1, COLOR_BORDE),
         )
 
-    def _al_aprobar(self, indice: int):
-        """Aprueba un producto individual."""
-        self.productos[indice].aprobado = True
-        tarjeta = self._tarjetas.get(indice)
-        if tarjeta:
-            tarjeta.border = ft.border.all(2, COLOR_EXITO)
-            tarjeta.update()
-        self._actualizar_contadores()
-
     def _al_editar(self, indice: int):
-        """Navega a la vista de edición para un producto específico."""
+        """Navega a la vista de edicion para un producto especifico."""
         if self.al_editar_producto:
             self.al_editar_producto(indice)
 
-    def _al_aceptar_todo(self, e):
-        """Aprueba todos los productos."""
-        for indice, producto in enumerate(self.productos):
-            producto.aprobado = True
+    def _al_guardar_individual(self, indice: int):
+        """Guarda una imagen individual."""
+        if self.al_exportar_individual:
+            self.al_exportar_individual(indice)
+        else:
+            # Fallback: marcar como aprobado y notificar
+            self.productos[indice].aprobado = True
             tarjeta = self._tarjetas.get(indice)
             if tarjeta:
                 tarjeta.border = ft.border.all(2, COLOR_EXITO)
+                try:
+                    tarjeta.update()
+                except Exception:
+                    pass
+            self._mensaje_estado.value = f"Imagen '{self.productos[indice].obtener_nombre_limpio()}' marcada para guardar"
+            self._mensaje_estado.color = COLOR_EXITO
+            try:
+                self._mensaje_estado.update()
+            except Exception:
+                pass
 
-        self._actualizar_contadores()
-        try:
-            self._grilla_productos.update()
-        except Exception:
-            pass
-
-    def _al_exportar_catalogo(self, e):
-        """Exporta el catálogo si todos los productos están aprobados."""
-        no_aprobados = [p for p in self.productos if not p.aprobado]
-        if no_aprobados:
-            self._mensaje_estado.value = (
-                f"⚠️ Hay {len(no_aprobados)} producto(s) sin aprobar. "
-                "Apruébalos o haz click en 'Aceptar todo'."
-            )
-            self._mensaje_estado.color = COLOR_ERROR
-            self._mensaje_estado.update()
-            return
+    def _al_guardar_todas(self, e):
+        """Exporta todas las imagenes."""
+        # Marcar todos como aprobados para el flujo de exportacion
+        for producto in self.productos:
+            producto.aprobado = True
 
         if self.al_exportar:
             self.al_exportar(self.productos)
 
-    def _actualizar_contadores(self):
-        """Actualiza los contadores de aprobadas/pendientes."""
-        aprobadas = sum(1 for p in self.productos if p.aprobado)
-        pendientes = len(self.productos) - aprobadas
-
-        self._etiqueta_aprobadas.value = f"{aprobadas} aprobada(s)"
-        self._etiqueta_pendientes.value = f"{pendientes} pendiente(s)"
-
-        try:
-            self._etiqueta_aprobadas.update()
-            self._etiqueta_pendientes.update()
-        except Exception:
-            pass
-
     def obtener_imagenes_finales(self) -> Dict[int, Image.Image]:
-        """Retorna el diccionario de imágenes finales generadas."""
+        """Retorna el diccionario de imagenes finales generadas."""
         return self._imagenes_finales

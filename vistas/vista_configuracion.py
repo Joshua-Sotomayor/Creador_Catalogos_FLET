@@ -33,10 +33,12 @@ class VistaConfiguracion(ft.UserControl):
         self,
         pagina: ft.Page,
         al_iniciar_proceso: Optional[Callable] = None,
+        al_convertir: Optional[Callable] = None,
     ):
         super().__init__()
         self.pagina = pagina
         self.al_iniciar_proceso = al_iniciar_proceso
+        self.al_convertir = al_convertir
 
         # Estado
         self._ruta_carpeta_madre = None
@@ -48,6 +50,8 @@ class VistaConfiguracion(ft.UserControl):
         self._ruta_imagen_individual = None
         self._incluir_nombre = True
         self._modo_entrada = "carpeta"
+        self._ruta_conversion_imagen = None
+        self._ruta_conversion_carpeta = None
         self.expand = True
 
 
@@ -306,10 +310,81 @@ class VistaConfiguracion(ft.UserControl):
             alignment=ft.alignment.center,
         )
 
-        # === Contenedor principal — RESPONSIVE ===
+        # === Tarjeta de conversion rapida ===
+        self._selector_conversion_imagen = SelectorCarpeta(
+            pagina=self.pagina,
+            etiqueta="Imagen individual para convertir",
+            descripcion="Se removera el fondo y se guardara como PNG.",
+            tipo="archivo",
+            extensiones_permitidas=["png", "jpg", "jpeg", "webp", "bmp"],
+            al_seleccionar=self._al_seleccionar_conversion_imagen,
+            icono=ft.Icons.IMAGE,
+        )
+
+        self._selector_conversion_carpeta = SelectorCarpeta(
+            pagina=self.pagina,
+            etiqueta="Carpeta completa para convertir",
+            descripcion="Todas las imagenes seran procesadas y guardadas en una carpeta _png_convert.",
+            tipo="carpeta",
+            al_seleccionar=self._al_seleccionar_conversion_carpeta,
+            icono=ft.Icons.FOLDER,
+        )
+
+        boton_convertir = ft.ElevatedButton(
+            "Convertir a PNG (sin fondo)",
+            icon=ft.Icons.TRANSFORM,
+            style=ft.ButtonStyle(
+                bgcolor=COLOR_ACENTO_SECUNDARIO,
+                color=COLOR_TEXTO_PRINCIPAL,
+                padding=ft.padding.symmetric(horizontal=24, vertical=12),
+                shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE),
+                text_style=ft.TextStyle(size=13, weight=ft.FontWeight.W_600),
+            ),
+            on_click=self._al_convertir,
+        )
+
+        seccion_conversion = self._crear_seccion(
+            ft.Icons.AUTO_FIX_HIGH, "Conversion rapida",
+            "Remueve el fondo de imagenes sin crear un catalogo completo",
+            [
+                self._selector_conversion_imagen,
+                ft.Container(
+                    content=ft.Row(
+                        controls=[
+                            ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                            ft.Text("o", size=11, color=COLOR_TEXTO_SECUNDARIO),
+                            ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                        ],
+                        spacing=10,
+                    ),
+                    padding=ft.padding.symmetric(vertical=4),
+                ),
+                self._selector_conversion_carpeta,
+                ft.Container(
+                    content=boton_convertir,
+                    alignment=ft.alignment.center,
+                    padding=ft.padding.only(top=8),
+                ),
+            ],
+            opcional=True,
+        )
+
+        # === Contenedor principal ===
         columna_contenido = ft.Column(
             controls=[
                 encabezado,
+                seccion_conversion,
+                ft.Container(
+                    content=ft.Row(
+                        controls=[
+                            ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                            ft.Text("Catalogo completo", size=12, weight=ft.FontWeight.W_600, color=COLOR_TEXTO_SECUNDARIO),
+                            ft.Container(expand=True, height=1, bgcolor=COLOR_BORDE),
+                        ],
+                        spacing=10,
+                    ),
+                    padding=ft.padding.symmetric(vertical=8),
+                ),
                 seccion_modo,
                 seccion_obligatoria,
                 seccion_nombre,
@@ -459,9 +534,27 @@ class VistaConfiguracion(ft.UserControl):
 
     def _mostrar_error(self, mensaje: str):
         """Muestra un mensaje de error."""
-        self._mensaje_estado.value = f"⚠️ {mensaje}"
+        self._mensaje_estado.value = f"Atencion: {mensaje}"
         self._mensaje_estado.color = COLOR_ERROR
         self._mensaje_estado.update()
+
+    def _al_seleccionar_conversion_imagen(self, ruta: str):
+        self._ruta_conversion_imagen = ruta
+
+    def _al_seleccionar_conversion_carpeta(self, ruta: str):
+        self._ruta_conversion_carpeta = ruta
+
+    def _al_convertir(self, e):
+        """Inicia la conversion rapida."""
+        if not self._ruta_conversion_imagen and not self._ruta_conversion_carpeta:
+            self._mostrar_error("Selecciona una imagen o carpeta para convertir.")
+            return
+
+        if self.al_convertir:
+            self.al_convertir({
+                "ruta_imagen": self._ruta_conversion_imagen,
+                "ruta_carpeta": self._ruta_conversion_carpeta,
+            })
 
     def obtener_configuracion(self) -> dict:
         """Retorna la configuración seleccionada como diccionario."""

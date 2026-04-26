@@ -89,19 +89,189 @@ class AplicacionCatalogo:
     # =========================================================================
 
     def _mostrar_vista_configuracion(self):
-        """Muestra la vista de configuración inicial."""
+        """Muestra la vista de configuracion inicial."""
         self._limpiar_pagina()
         vista = VistaConfiguracion(
             pagina=self.pagina,
             al_iniciar_proceso=self._al_iniciar_proceso,
+            al_convertir=self._al_convertir_rapida,
         )
         self._vista_actual = vista
         self.pagina.add(vista)
         self.pagina.update()
 
     def _al_iniciar_proceso(self, configuracion: dict):
-        """Callback cuando el usuario inicia el proceso desde la configuración."""
+        """Callback cuando el usuario inicia el proceso desde la configuracion."""
         self._mostrar_pantalla_procesamiento(configuracion)
+
+    def _al_convertir_rapida(self, datos: dict):
+        """Inicia la conversion rapida de imagen o carpeta."""
+        self._limpiar_pagina()
+
+        self._etiqueta_estado_proceso = ft.Text(
+            "Preparando conversion...",
+            size=16,
+            weight=ft.FontWeight.W_600,
+            color=COLOR_TEXTO_PRINCIPAL,
+            text_align=ft.TextAlign.CENTER,
+        )
+        self._etiqueta_detalle_proceso = ft.Text(
+            "",
+            size=13,
+            color=COLOR_TEXTO_SECUNDARIO,
+            text_align=ft.TextAlign.CENTER,
+        )
+        self._barra_progreso_proceso = ft.ProgressBar(
+            value=0,
+            color=COLOR_ACENTO_SECUNDARIO,
+            bgcolor=COLOR_FONDO_TARJETA,
+            height=6,
+            border_radius=3,
+            width=500,
+        )
+        self._porcentaje_proceso = ft.Text(
+            "0%",
+            size=14,
+            color=COLOR_ACENTO_SECUNDARIO,
+            weight=ft.FontWeight.W_700,
+        )
+
+        contenido = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Icon(ft.Icons.TRANSFORM, size=64, color=COLOR_ACENTO_SECUNDARIO),
+                    ft.Text(
+                        "Convirtiendo imagenes",
+                        size=24,
+                        weight=ft.FontWeight.W_800,
+                        color=COLOR_TEXTO_PRINCIPAL,
+                    ),
+                    ft.Container(height=20),
+                    self._etiqueta_estado_proceso,
+                    self._etiqueta_detalle_proceso,
+                    ft.Container(height=10),
+                    self._barra_progreso_proceso,
+                    self._porcentaje_proceso,
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=10,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            alignment=ft.alignment.center,
+            expand=True,
+        )
+        self.pagina.add(contenido)
+        self.pagina.update()
+
+        hilo = threading.Thread(
+            target=self._ejecutar_conversion_rapida,
+            args=(datos,),
+            daemon=True,
+        )
+        hilo.start()
+
+    def _ejecutar_conversion_rapida(self, datos: dict):
+        """Ejecuta la conversion rapida en hilo separado."""
+        try:
+            ruta_imagen = datos.get("ruta_imagen")
+            ruta_carpeta = datos.get("ruta_carpeta")
+
+            imagenes_a_procesar = []
+
+            if ruta_imagen and os.path.isfile(ruta_imagen):
+                imagenes_a_procesar.append(ruta_imagen)
+            elif ruta_carpeta and os.path.isdir(ruta_carpeta):
+                from configuracion.constantes import EXTENSIONES_IMAGEN
+                for archivo in os.listdir(ruta_carpeta):
+                    extension = os.path.splitext(archivo)[1].lower()
+                    if extension in EXTENSIONES_IMAGEN:
+                        imagenes_a_procesar.append(os.path.join(ruta_carpeta, archivo))
+
+            if not imagenes_a_procesar:
+                self._actualizar_progreso("No se encontraron imagenes para convertir", "", 0)
+                return
+
+            total = len(imagenes_a_procesar)
+            convertidas = 0
+
+            for i, ruta in enumerate(imagenes_a_procesar):
+                nombre_corto = os.path.basename(ruta)
+                self._actualizar_progreso(
+                    "Removiendo fondo...",
+                    f"{nombre_corto} ({i+1}/{total})",
+                    (i / total),
+                )
+
+                # Determinar carpeta de salida
+                carpeta_padre = os.path.dirname(ruta)
+                from configuracion.constantes import SUFIJO_CONVERTIDO
+                carpeta_salida = carpeta_padre + SUFIJO_CONVERTIDO
+                os.makedirs(carpeta_salida, exist_ok=True)
+
+                nombre_sin_ext = os.path.splitext(nombre_corto)[0]
+                ruta_salida = os.path.join(carpeta_salida, f"{nombre_sin_ext}.png")
+
+                resultado = self.servicio_remover_fondo.remover_fondo_y_guardar(
+                    ruta, ruta_salida
+                )
+                if resultado:
+                    convertidas += 1
+
+            self._actualizar_progreso("Conversion completada", "", 1.0)
+            self.pagina.run_task(self._mostrar_exito_conversion, convertidas)
+
+        except Exception as error:
+            self._actualizar_progreso(f"Error: {error}", "", 0)
+            import traceback
+            traceback.print_exc()
+
+    async def _mostrar_exito_conversion(self, total: int):
+        """Muestra pantalla de exito de conversion."""
+        import asyncio
+        await asyncio.sleep(0.5)
+
+        self._limpiar_pagina()
+
+        contenido = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Icon(ft.Icons.CHECK_CIRCLE, size=80, color=COLOR_EXITO),
+                    ft.Text(
+                        "Conversion completada",
+                        size=26,
+                        weight=ft.FontWeight.W_800,
+                        color=COLOR_EXITO,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    ft.Text(
+                        f"{total} imagen(es) convertida(s) y guardada(s) en carpeta _png_convert",
+                        size=15,
+                        color=COLOR_TEXTO_SECUNDARIO,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    ft.Container(height=30),
+                    ft.ElevatedButton(
+                        "Aceptar",
+                        icon=ft.Icons.CHECK,
+                        style=ft.ButtonStyle(
+                            bgcolor=COLOR_ACENTO_PRIMARIO,
+                            color=COLOR_TEXTO_PRINCIPAL,
+                            padding=ft.padding.symmetric(horizontal=30, vertical=14),
+                            shape=ft.RoundedRectangleBorder(radius=RADIO_BORDE),
+                            text_style=ft.TextStyle(size=16, weight=ft.FontWeight.W_600),
+                        ),
+                        on_click=lambda e: self._mostrar_vista_configuracion(),
+                    ),
+                ],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=12,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            alignment=ft.alignment.center,
+            expand=True,
+        )
+        self.pagina.add(contenido)
+        self.pagina.update()
 
     # =========================================================================
     # VISTA 2: PROCESAMIENTO (con barra de progreso)
@@ -433,6 +603,7 @@ class AplicacionCatalogo:
             imagenes_compuestas=self._imagenes_compuestas,
             al_editar_producto=self._al_editar_desde_preview,
             al_exportar=self._al_exportar,
+            al_exportar_individual=self._al_exportar_individual,
         )
 
         self._vista_actual = vista
@@ -440,8 +611,36 @@ class AplicacionCatalogo:
         self.pagina.update()
 
     def _al_editar_desde_preview(self, indice: int):
-        """Navega a edición para un producto específico desde la previsualización."""
+        """Navega a edicion para un producto especifico desde la previsualizacion."""
         self._mostrar_vista_edicion(indice_inicial=indice)
+
+    def _al_exportar_individual(self, indice: int):
+        """Exporta una imagen individual."""
+        if indice >= len(self._productos):
+            return
+        producto = self._productos[indice]
+        imagen_final = None
+        if hasattr(self._vista_actual, 'obtener_imagenes_finales'):
+            imagen_final = self._vista_actual.obtener_imagenes_finales().get(indice)
+
+        if not imagen_final:
+            return
+
+        import os
+        ruta_madre = self.configuracion.ruta_carpeta_madre
+        carpeta_finalizada = f"{producto.categoria}{SUFIJO_FINALIZADO}"
+        if ruta_madre:
+            ruta_carpeta_final = os.path.join(ruta_madre, carpeta_finalizada)
+        else:
+            ruta_base = os.path.dirname(producto.ruta_original)
+            ruta_base_padre = os.path.dirname(ruta_base)
+            ruta_carpeta_final = os.path.join(ruta_base_padre, carpeta_finalizada)
+
+        os.makedirs(ruta_carpeta_final, exist_ok=True)
+        nombre_archivo = f"{producto.nombre}.png"
+        ruta_final = os.path.join(ruta_carpeta_final, nombre_archivo)
+        self.servicio_composicion.guardar_imagen(imagen_final, ruta_final)
+        producto.ruta_final = ruta_final
 
     # =========================================================================
     # EXPORTACIÓN
@@ -598,7 +797,7 @@ class AplicacionCatalogo:
                 controls=[
                     ft.Icon(ft.Icons.CHECK_CIRCLE, size=80, color=COLOR_EXITO),
                     ft.Text(
-                        "¡Catálogo exportado exitosamente!",
+                        "Catalogo exportado exitosamente",
                         size=26,
                         weight=ft.FontWeight.W_800,
                         color=COLOR_EXITO,
@@ -612,7 +811,8 @@ class AplicacionCatalogo:
                     ),
                     ft.Container(height=30),
                     ft.ElevatedButton(
-                        "🔄 Crear otro catálogo",
+                        "Aceptar",
+                        icon=ft.Icons.CHECK,
                         style=ft.ButtonStyle(
                             bgcolor=COLOR_ACENTO_PRIMARIO,
                             color=COLOR_TEXTO_PRINCIPAL,
