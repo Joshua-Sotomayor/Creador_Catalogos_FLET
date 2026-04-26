@@ -219,20 +219,20 @@ class ServicioTexto:
             fila, columna, filas_grilla, columnas_grilla,
         )
 
-        # Mapear alineación a anchor de Pillow
+        # Mapear alineacion a anchor de Pillow
         mapa_alineacion = {
-            ALINEACION_IZQUIERDA: "lm",   # left-middle
+            ALINEACION_IZQUIERDA: "rm",   # right-middle (texto se extiende a la izquierda)
             ALINEACION_CENTRO: "mm",       # middle-middle
-            ALINEACION_DERECHA: "rm",      # right-middle
+            ALINEACION_DERECHA: "lm",      # left-middle (texto se extiende a la derecha)
         }
         anchor = mapa_alineacion.get(alineacion, "mm")
 
         # Ajustar posicion x segun alineacion
         ancho_celda = resultado.width / columnas_grilla
         if alineacion == ALINEACION_IZQUIERDA:
-            centro_x = int((columna + 1) * ancho_celda - ancho_celda * 0.1)
-        elif alineacion == ALINEACION_DERECHA:
             centro_x = int(columna * ancho_celda + ancho_celda * 0.1)
+        elif alineacion == ALINEACION_DERECHA:
+            centro_x = int((columna + 1) * ancho_celda - ancho_celda * 0.1)
 
         # Sombra
         color_sombra = (0, 0, 0, 150)

@@ -201,19 +201,18 @@ class VistaEdicion(ft.UserControl):
             min=10, max=200, value=50, divisions=190, label="{value}",
             active_color=COLOR_ACENTO_SECUNDARIO, on_change=self._al_cambiar_tamano_etiqueta, width=200,
         )
-        sliders_y_color_precio = ft.Column(controls=[
+        sliders_precio = ft.Column(controls=[
             ft.Text("Texto", size=11, color=COLOR_TEXTO_SECUNDARIO), self._slider_tamano_precio,
             ft.Text("Etiqueta", size=11, color=COLOR_TEXTO_SECUNDARIO), self._slider_tamano_etiqueta,
-            self._selector_color_precio,
         ], spacing=2, width=210)
         fila_grilla_precio = ft.Row(
-            controls=[self._matriz_precio, sliders_y_color_precio], spacing=8,
+            controls=[self._matriz_precio, sliders_precio], spacing=8,
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
         seccion_precio = ft.Container(
             content=ft.Column(controls=[
                 ft.Text("Precio", size=14, weight=ft.FontWeight.W_700, color=COLOR_TEXTO_PRINCIPAL),
-                self._campo_precio, fila_grilla_precio,
+                self._campo_precio, fila_grilla_precio, self._selector_color_precio,
             ], spacing=8),
             padding=ft.padding.all(12), border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO, border=ft.border.all(1, COLOR_BORDE),
@@ -275,6 +274,7 @@ class VistaEdicion(ft.UserControl):
             ], spacing=8),
             padding=ft.padding.all(12), border_radius=RADIO_BORDE,
             bgcolor=COLOR_FONDO_SECUNDARIO, border=ft.border.all(1, COLOR_BORDE),
+            width=490,
         )
 
         # === Fondo del precio (oculto) ===
